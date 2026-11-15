@@ -7,6 +7,6 @@ export default defineConfig({
   projects:[
     {name:'chromium-desktop',use:{...devices['Desktop Chrome'],viewport:{width:1280,height:720},launchOptions:{args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}}},
     {name:'webkit-iphone-landscape',use:{...devices['iPhone 13'],viewport:{width:844,height:390},screen:{width:844,height:390},browserName:'webkit'}},
-    {name:'chromium-touch',use:{...devices['iPhone 13'],defaultBrowserType:undefined,viewport:{width:844,height:390},screen:{width:844,height:390},browserName:'chromium',launchOptions:{args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}}}
+    {name:'chromium-touch',use:{...devices['iPhone 13'],viewport:{width:844,height:390},screen:{width:844,height:390},browserName:'chromium',launchOptions:{args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}}}
   ]
 });
