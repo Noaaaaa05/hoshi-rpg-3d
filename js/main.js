@@ -132,7 +132,7 @@ async function init() {
       explore(dt);saveTimer+=dt;
       if(saveTimer>5){saveTimer=0;save();}
       if(quality==='auto') {
-        qualityTimer+=dt;frameSum+=Math.min(rawDt,.1);frameCount++;
+        qualityTimer+=Math.min(rawDt,.5);frameSum+=Math.min(rawDt,.5);frameCount++;
         if(qualityTimer>5){
           if(frameSum/frameCount>.026&&pixelRatio>1){pixelRatio=1;renderer.setPixelRatio(1);renderer.setSize(innerWidth,innerHeight,false);world.grass.visible=false;}
           qualityTimer=frameSum=frameCount=0;

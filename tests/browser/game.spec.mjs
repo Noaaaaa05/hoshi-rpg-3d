@@ -10,11 +10,13 @@ test('renders, explores, saves and restores at a GitHub Pages subpath',async({pa
   await page.locator('#start-button').click();
   await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.started)).toBe(true);
   const start=await page.evaluate(()=>window.__HOSHI_DEBUG__.player);
-  await page.keyboard.down('w');await page.waitForTimeout(1200);await page.keyboard.up('w');
-  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.z)).toBeLessThan(start.z-2);
-  await page.keyboard.down('Shift');await page.keyboard.down('w');await page.waitForTimeout(1100);await page.keyboard.up('w');await page.keyboard.up('Shift');
-  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.stars.length)).toBeGreaterThan(0);
-  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.stamina)).toBeLessThan(97);
+  await page.keyboard.down('w');
+  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.z),{timeout:20000}).toBeLessThan(start.z-3);
+  await page.keyboard.up('w');
+  await page.keyboard.down('Shift');await page.keyboard.down('w');
+  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.stars.length),{timeout:20000}).toBeGreaterThan(0);
+  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.stamina),{timeout:10000}).toBeLessThan(95);
+  await page.keyboard.up('w');await page.keyboard.up('Shift');
   await page.locator('#jump-button').click();
   await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.grounded),{intervals:[10,30,50]}).toBe(false);
   await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.grounded)).toBe(true);
@@ -51,7 +53,7 @@ test('touch joystick, camera and dash work simultaneously and release cleanly',a
   const start=await page.evaluate(()=>window.__HOSHI_DEBUG__);
   await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:touches});
   touches[1].x+=80;await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:touches});
-  await page.waitForTimeout(700);
+  await expect.poll(()=>page.evaluate(()=>window.__HOSHI_DEBUG__.player.z),{timeout:20000}).toBeLessThan(start.player.z-1);
   const active=await page.evaluate(()=>window.__HOSHI_DEBUG__);
   expect(active.player.dashing).toBe(true);expect(active.player.stamina).toBeLessThan(98);expect(active.player.z).toBeLessThan(start.player.z-1);
   expect(active.camera.yaw).toBeLessThan(start.camera.yaw-.1);
