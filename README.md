@@ -1,4 +1,4 @@
-# 星灯りの森 3D — Ver.0.2
+# 星灯りの森 3D — Ver.0.2.1
 
 ランタンひとつ、まだ知らない景色へ。iPhoneのSafariで遊べる、オリジナル3D探索アクションRPGです。Three.js / HTML / CSS / JavaScriptで制作しています。
 
@@ -16,6 +16,12 @@ GitHub Pagesの公開設定後に **https://noaaaaa05.github.io/hoshi-rpg-3d/** 
 攻撃ボタンはタップまたは長押し（連続攻撃）、回避ボタンはタップです。PCは **J：攻撃 / K：回避**。従来のジャンプ・ダッシュ・カメラ操作はそのまま使えます。
 
 8つの星灯りと、3つの風景「星詠みの石門」「星降りの古木」「旅人の灯り」を探してみてください。達成後も自由に探索できます。
+
+## Ver.0.2.1：Meshyオリジナル主人公
+
+`assets/models/hero.glb` を元にしたオリジナル主人公を導入しました。原本は保持し、通常表示には約264KB・14,998三角形の `hero-mobile.glb` を使用します。高さ1.9m、+Z正面、足元を地面に合わせています。元GLBには骨組み・アニメーション・テクスチャがないため、今回は静止ポーズと単色マテリアルです。移動・ジャンプ・ダッシュ・攻撃・回避・戦闘はそのまま機能します。
+
+読み込み失敗・破損・時間切れでは簡易主人公で続行します。Idle / Walk / Run / Attack / Jump / Dodgeのクリップを将来指定できる構造です。検査結果と差し替え方法は [`assets/models/HERO.md`](assets/models/HERO.md) を参照してください。
 
 ## Ver.0.2の追加内容
 
@@ -100,7 +106,8 @@ Ver.0.1の基準コミットは `0fe4d51c3fbe74eceb15f3c1c14c48a358431137` で�
 | `js/monsters.js` | モンスター共有描画・HPバー・斬撃・ダメージ表示・GLB差し替え |
 | `js/input.js` | マルチタッチ、スティック、スワイプ、キーボード |
 | `js/player.js` | 簡易キャラクターとランタン、歩行アニメーション |
-| `js/models.js` | GLB読み込み、サイズ調整、アニメーション切り替え |
+| `js/models.js`・`js/model-utils.js` | GLB読み込み・検証、足元と向きの調整、6種類のアニメーション切り替え |
+| `assets/models/hero.glb`・`hero-mobile.glb` | Meshy原本とゲーム表示用の軽量版 |
 | `js/map.js` | ミニマップ |
 | `js/storage.js` | 保存・復帰・保存値の検証 |
 | `assets/models/manifest.json` | GLBの差し替え・配置設定 |

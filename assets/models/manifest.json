@@ -1,5 +1,20 @@
 {
-  "player": null,
+  "player": {
+    "url": "./hero-mobile.glb",
+    "source": "./hero.glb",
+    "height": 1.9,
+    "rotationY": 0,
+    "footOffset": 0,
+    "fallbackColor": "#c5ccbe",
+    "animations": {
+      "idle": "Idle",
+      "walk": "Walk",
+      "run": "Run",
+      "attack": "Attack",
+      "jump": "Jump",
+      "dodge": "Dodge"
+    }
+  },
   "objects": [],
   "monsters": {
     "slime": null,

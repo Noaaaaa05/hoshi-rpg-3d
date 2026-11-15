@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="星灯りを集めながら、静かな3Dの森を旅する。iPhone Safariで遊べるオリジナル探索アクションRPG。">
-  <title>星灯りの森 3D — Ver.0.2</title>
+  <title>星灯りの森 3D — Ver.0.2.1</title>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css?v=0.2.0">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
@@ -42,12 +42,12 @@
       <div class="combat-controls"><button id="dodge-button" class="action dodge" type="button" aria-label="回避"><span class="action-symbol">↝</span><span>回避</span></button><button id="attack-button" class="action attack" type="button" aria-label="通常攻撃（長押しで連続攻撃）"><span class="action-symbol">⚔</span><span>攻撃</span></button></div>
       <div id="damage-numbers" aria-hidden="true"></div>
       <span class="camera-caption">右側をスワイプして見回す</span>
-      <footer class="world-footer"><span class="live-dot"></span>自由探索 <span>VER. 0.2</span></footer>
+      <footer class="world-footer"><span class="live-dot"></span>自由探索 <span>VER. 0.2.1</span></footer>
       <div id="discovery" class="discovery" aria-live="polite"><small>新しい風景を見つけた</small><p id="discovery-name"></p><span>✧</span></div>
     </div>
     <section id="intro" class="overlay intro" aria-labelledby="game-title">
       <div class="intro-content"><span class="eyebrow">A LITTLE JOURNEY UNDER THE STARS</span><div class="title-ornament">──── ✧ ────</div><h1 id="game-title">星灯りの森 <em>3D</em></h1><p class="intro-subtitle">ランタンひとつ、まだ知らない景色へ。</p><p class="intro-copy">木々の向こうに眠る、3つの風景。<br>こぼれた星灯りを集めて、あなただけの小さな旅を。</p><button id="start-button" class="primary-button" disabled>森を準備しています…</button><span class="intro-note">イヤホンなしでも遊べます · 探索は自動で保存</span><div class="intro-controls"><span>◉ 左で移動</span><span>↔ 右で見回す</span><span>⌃ ジャンプ</span></div></div>
-      <span class="intro-version">ORIGINAL ACTION RPG / VER. 0.2</span>
+      <span class="intro-version">ORIGINAL ACTION RPG / VER. 0.2.1</span>
     </section>
     <section id="menu" class="overlay menu hidden" aria-labelledby="menu-title">
       <div class="menu-card"><span class="eyebrow">TAKE A LITTLE BREAK</span><h2 id="menu-title">森でひと休み</h2><p>旅の記録は、この端末に自動保存されます。</p><div class="battle-stats">Lv. <b id="level-stat">1</b>　攻撃力 <b id="attack-stat">18</b>　討伐 <b id="kills-stat">0</b></div><label class="setting-row" for="quality">描画品質<select id="quality"><option value="auto">自動（おすすめ）</option><option value="low">軽量</option><option value="high">高画質</option></select></label><label class="setting-row" for="sensitivity">カメラ感度<input id="sensitivity" type="range" min="0.4" max="1.8" step="0.1" value="1"></label><button id="resume-button" class="primary-button">旅をつづける</button><button id="home-button" class="secondary-button">はじまりの小径へ戻る</button><details><summary>操作のヒント</summary><p>左スティックで移動、右側をスワイプで視点変更。ダッシュは長押し、ジャンプはタップ。攻撃は長押しで連続、回避はタップ（ST 22）。PCでは WASD / 矢印、Shift、Space、ドラッグ、J で攻撃、K で回避。Esc でメニュー。</p><p>8つの星灯りと3つの風景を探しましょう。赤い輪は敵の攻撃予告。敵を倒して経験値を集めると、HPと攻撃力が上がります。はじまりの小径は安全地帯です。</p></details></div>
@@ -56,6 +56,6 @@
     <section id="error" class="overlay hidden" role="alert"><div class="menu-card"><span class="eyebrow">星灯りの森 3D</span><h2>森を開けませんでした</h2><p id="error-message"></p><button class="primary-button" onclick="location.reload()">もう一度読み込む</button></div></section>
   </main>
   <script>window.addEventListener('error',function(e){if(e.message&&document.getElementById('start-button').disabled){document.getElementById('error-message').textContent='読み込みに失敗しました。ページを再読み込みしてください。'+e.message;document.getElementById('error').classList.remove('hidden');}});</script>
-  <script type="module" src="./js/main.js?v=0.2.0"></script>
+  <script type="module" src="./js/main.js?v=0.2.1"></script>
 </body>
 </html>

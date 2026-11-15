@@ -30,11 +30,21 @@ export function createPlayer(scene) {
   mesh(new THREE.CylinderGeometry(.035,.035,.15,5),leather,0,.035,0,sword);
   const glow = new THREE.PointLight('#ffd48b',3.5,6,2); glow.position.set(.4,1,0); group.add(glow);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(.46,20),new THREE.MeshBasicMaterial({color:'#092c2b',transparent:true,opacity:.28,depthWrite:false})); shadow.rotation.x = -Math.PI/2; scene.add(shadow);
-  let phase = 0;
-  const api = { group, animateModel: null,
-    replaceVisual(model) { visual.visible = false; group.add(model); },
+  let phase = 0, customModel = null;
+  const fallbackInfo = {loaded:false,type:'procedural',mode:'procedural',minY:0,clips:[],states:{}};
+  const api = { group, animateModel: null, modelInfo: {...fallbackInfo},
+    getModelStatus() { return {...api.modelInfo,proceduralVisible:visual.visible,modelVisible:!!customModel?.visible}; },
+    replaceVisual(model,info) {
+      if(customModel)group.remove(customModel);
+      customModel=model;group.add(model);visual.visible=false;api.modelInfo=info;
+    },
+    restoreVisual() {
+      if(customModel)group.remove(customModel);
+      customModel=null;visual.visible=true;api.animateModel=null;api.modelInfo={...fallbackInfo};
+    },
     update(dt, motor, ground, combat) {
       group.position.set(motor.x,motor.y,motor.z); group.rotation.y = motor.angle;
+      if(visual.visible){
       phase += dt * motor.speed * 2.1;
       const swing = Math.min(1,motor.speed/3.5)*.6;
       legs[0].rotation.x = Math.sin(phase)*swing; legs[1].rotation.x = -Math.sin(phase)*swing;
@@ -48,6 +58,7 @@ export function createPlayer(scene) {
       visual.rotation.x = combat?.dodging ? -.45 : 0;
       visual.position.y = motor.grounded ? Math.abs(Math.sin(phase))*swing*.055 : .04;
       cape.rotation.x = -.12 + motor.speed*.025;
+      }
       shadow.position.set(motor.x,ground+.025,motor.z); shadow.scale.setScalar(1+Math.max(0,motor.y-ground)*.16);
       shadow.material.opacity = .28 / (1 + Math.max(0,motor.y-ground));
       api.animateModel?.(dt,motor,combat);

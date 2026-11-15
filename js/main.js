@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
-import { createPlayer } from './player.js?v=0.2.0';
+import { createPlayer } from './player.js?v=0.2.1';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
-import { loadModels } from './models.js?v=0.2.0';
+import { loadModels } from './models.js?v=0.2.1';
 import { loadSave, writeSave } from './storage.js?v=0.2.0';
 import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.0';
 import { createMonsters } from './monsters.js?v=0.2.0';
@@ -166,7 +166,7 @@ async function init() {
         }
       }
     }
-    world.update(elapsed);player.update(dt,motor,heightAt(motor.x,motor.z),combat);updateModels(dt);
+    world.update(elapsed);player.update(started&&!paused&&!isPortrait()?dt:0,motor,heightAt(motor.x,motor.z),combat);updateModels(dt);
     updateCamera(dt);monsters.update(started&&!paused&&!isPortrait()?dt:0,combat.time,camera);hudTimer+=dt;if(hudTimer>.1){hudTimer=0;updateHUD();}
     renderer.render(scene,camera);
     if(!ready){ready=true;$('#start-button').textContent=saved?'旅のつづきへ　 →':'森を歩きはじめる　 →';$('#start-button').disabled=false;}
@@ -174,6 +174,7 @@ async function init() {
   applyQuality();resize();updateCamera(0,true);updateHUD();player.update(0,motor,heightAt(motor.x,motor.z));
   if(new URLSearchParams(location.search).has('debug'))Object.defineProperty(window,'__HOSHI_DEBUG__',{get:()=>({
     player:{x:motor.x,y:motor.y,z:motor.z,angle:motor.angle,speed:motor.speed,stamina:motor.stamina,hp:motor.hp,grounded:motor.grounded,dashing:motor.dashing,maxHP:combat.progression.maxHP,attack:combat.progression.attack,level:combat.progression.level,xp:combat.progression.xp},
+    playerModel:{...player.getModelStatus(),worldFootY:motor.y+player.modelInfo.minY},
     camera:{yaw,pitch,x:camera.position.x,y:camera.position.y,z:camera.position.z},started,paused,
     stars:[...collected],landmarks:[...discovered],input:{joyId:input.joyId,cameraId:input.cameraId,dashId:input.dashId},
     combat:{attacking:combat.attacking,attackPhase:combat.attackPhase,dodging:combat.dodging,dodgeCooldown:combat.dodgeCooldown,kills:combat.progression.kills,time:combat.time},

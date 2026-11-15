@@ -77,7 +77,7 @@ function triangleGLB() {
 test('GLB monster replacement and failed-load fallback keep combat available in WebKit',async({page},testInfo)=>{
   test.skip(testInfo.project.name!=='webkit-iphone-landscape','One WebKit run validates the shared GLB loader.');
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.route('**/assets/models/manifest.json',route=>route.fulfill({json:{player:null,objects:[],monsters:{slime:{url:'./test.glb',height:1.1},goblin:{url:'./missing.glb',height:1.6}}}}));
+  await page.route('**/assets/models/manifest.json*',route=>route.fulfill({json:{player:null,objects:[],monsters:{slime:{url:'./test.glb',height:1.1},goblin:{url:'./missing.glb',height:1.6}}}}));
   await page.route('**/test.glb',route=>route.fulfill({contentType:'model/gltf-binary',body:triangleGLB()}));
   await page.route('**/missing.glb',route=>route.fulfill({status:404,body:'Not found'}));
   await seed(page);

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { heightAt } from './physics.js';
+import { prepareModel, createPlayerAnimator } from './model-utils.js?v=0.2.1';
 
 // Keep URLs relative to this manifest, so GitHub Pages project paths work.
 export async function loadModels(scene, player, grid, onWarning = console.warn, monsters = null) {
-  const manifestURL = new URL('../assets/models/manifest.json', import.meta.url);
+  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.1', import.meta.url);
   const response = await fetch(manifestURL);
   if (!response.ok) throw new Error(`Model manifest: HTTP ${response.status}`);
   const manifest = await response.json();
@@ -12,36 +13,28 @@ export async function loadModels(scene, player, grid, onWarning = console.warn, 
   const mixers = [];
   async function load(spec) {
     if (!spec || typeof spec.url !== 'string') throw new Error('モデルの url を指定してください');
-    const gltf = await loader.loadAsync(new URL(spec.url, manifestURL).href);
-    const root = gltf.scene;
-    root.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(root), size = bounds.getSize(new THREE.Vector3());
-    const scale = Number.isFinite(spec.height) && spec.height > 0 ? spec.height / Math.max(.001, size.y) : 1;
-    const center = bounds.getCenter(new THREE.Vector3());
-    root.scale.multiplyScalar(scale);
-    root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
-    const wrapper = new THREE.Group(); wrapper.add(root);
-    wrapper.rotation.y = Number.isFinite(spec.rotationY) ? spec.rotationY : 0;
-    return { gltf, wrapper };
+    const url = new URL(spec.url, manifestURL), controller = new AbortController();
+    let timeout;
+    try {
+      const gltf = await Promise.race([
+        (async()=>{
+          const response=await fetch(url,{signal:controller.signal});
+          if(!response.ok)throw new Error(`GLB: HTTP ${response.status}`);
+          return loader.parseAsync(await response.arrayBuffer(),new URL('.',url).href);
+        })(),
+        new Promise((_,reject)=>{timeout=setTimeout(()=>{controller.abort();reject(new Error('GLBの読み込みが時間切れになりました'));},12000);})
+      ]);
+      return {gltf,...prepareModel(gltf,spec)};
+    } finally { clearTimeout(timeout); }
   }
   if (manifest.player) {
     try {
-      const { gltf, wrapper } = await load(manifest.player);
-      player.replaceVisual(wrapper);
-      const mixer = new THREE.AnimationMixer(gltf.scene);
-      const animationMap = manifest.player.animations || {};
-      const actions = {};
-      for (const state of ['idle', 'walk', 'run', 'jump', 'attack', 'dodge']) {
-        const clip = THREE.AnimationClip.findByName(gltf.animations, animationMap[state] || state);
-        if (clip) actions[state] = mixer.clipAction(clip);
-      }
-      let active = null;
-      player.animateModel = (dt, motor, combat) => {
-        const next = combat?.dodging ? actions.dodge || actions.run || actions.walk : combat?.attacking ? actions.attack || actions.idle : !motor.grounded ? actions.jump : motor.speed > .2 ? (motor.dashing ? actions.run || actions.walk : actions.walk) : actions.idle;
-        if (next !== active) { active?.fadeOut(.18); next?.reset().fadeIn(.18).play(); active = next; }
-        mixer.update(dt);
-      };
-    } catch (error) { onWarning('主人公GLBの読み込みに失敗。簡易モデルを使用します。', error); }
+      const { gltf, wrapper, info } = await load(manifest.player);
+      const animator = createPlayerAnimator(gltf.scene,gltf.animations,manifest.player.animations);
+      // Install only after transforms/materials/animations have all been validated.
+      player.replaceVisual(wrapper,{...info,mode:animator?'animated':'static',states:animator?.clips || {}});
+      player.animateModel = animator ? (dt,motor,combat)=>animator.update(dt,motor,combat) : null;
+    } catch (error) { player.restoreVisual(); onWarning('主人公GLBの読み込みに失敗。簡易モデルを使用します。', error); }
   }
   for (const type of ['slime', 'goblin']) {
     const spec = manifest.monsters?.[type];
