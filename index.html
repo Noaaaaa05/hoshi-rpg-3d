@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#102c30">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="星灯りを集めながら、静かな3Dの森を旅する。iPhone Safariで遊べるオリジナル探索アクションRPG。">
+  <title>星灯りの森 3D — Ver.0.1</title>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+</head>
+<body>
+  <main id="game" aria-label="星灯りの森 3D">
+    <canvas id="scene" aria-label="3Dの森林フィールド"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div id="hud" class="hud">
+      <header class="identity">
+        <div class="crest" aria-hidden="true">✦</div>
+        <div class="vitals">
+          <div class="name-line"><span>星の旅人</span><small>Lv. 01</small></div>
+          <div class="meter-line"><span>HP</span><div id="hp-meter" class="meter hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="hp-fill"></i></div><small id="hp-value">100 / 100</small></div>
+          <div class="meter-line"><span>ST</span><div id="st-meter" class="meter stamina" role="progressbar" aria-label="スタミナ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i id="st-fill"></i></div><small id="st-value">100 / 100</small></div>
+        </div>
+      </header>
+      <div class="area-label"><span class="tiny-star">✧</span><div><small>THE STARLIT WOODS</small><p id="area-name">木漏れ日の小径</p></div></div>
+      <aside class="top-right">
+        <button id="pause-button" class="icon-button" type="button" aria-label="メニューを開く">Ⅱ</button>
+        <div class="minimap-wrap"><span class="north">N</span><canvas id="minimap" width="240" height="240" aria-label="森のミニマップ"></canvas><span class="map-caption">星灯りの森</span></div>
+      </aside>
+      <section class="quest" aria-label="探索目標"><span class="quest-line">森の小さな旅</span><p>星灯りの記憶をたどる</p><div><span id="landmark-count">0 / 3 風景を発見</span><span class="quest-separator">·</span><span>✧ <b id="star-count">0</b> / 8</span></div></section>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      <div class="compass"><span>W</span><i></i><strong id="heading">N</strong><i></i><span>E</span></div>
+      <div id="camera-zone" class="camera-zone" aria-label="ドラッグしてカメラを操作"></div>
+      <div class="move-controls"><div id="joystick" class="joystick" role="group" aria-label="移動ジョイスティック"><div class="joystick-rim"></div><span class="joystick-cross">+</span><div id="joystick-thumb" class="joystick-thumb"></div></div><span class="control-caption">移動</span></div>
+      <div class="action-controls"><button id="dash-button" class="action dash" type="button" aria-label="押し続けてダッシュ"><span class="action-symbol">»</span><span>ダッシュ</span></button><button id="jump-button" class="action jump" type="button" aria-label="ジャンプ"><span class="action-symbol">⌃</span><span>ジャンプ</span></button></div>
+      <span class="camera-caption">右側をスワイプして見回す</span>
+      <footer class="world-footer"><span class="live-dot"></span>自由探索 <span>VER. 0.1</span></footer>
+      <div id="discovery" class="discovery" aria-live="polite"><small>新しい風景を見つけた</small><p id="discovery-name"></p><span>✧</span></div>
+    </div>
+    <section id="intro" class="overlay intro" aria-labelledby="game-title">
+      <div class="intro-content"><span class="eyebrow">A LITTLE JOURNEY UNDER THE STARS</span><div class="title-ornament">──── ✧ ────</div><h1 id="game-title">星灯りの森 <em>3D</em></h1><p class="intro-subtitle">ランタンひとつ、まだ知らない景色へ。</p><p class="intro-copy">木々の向こうに眠る、3つの風景。<br>こぼれた星灯りを集めて、あなただけの小さな旅を。</p><button id="start-button" class="primary-button" disabled>森を準備しています…</button><span class="intro-note">イヤホンなしでも遊べます · 探索は自動で保存</span><div class="intro-controls"><span>◉ 左で移動</span><span>↔ 右で見回す</span><span>⌃ ジャンプ</span></div></div>
+      <span class="intro-version">ORIGINAL EXPLORATION RPG / VER. 0.1</span>
+    </section>
+    <section id="menu" class="overlay menu hidden" aria-labelledby="menu-title">
+      <div class="menu-card"><span class="eyebrow">TAKE A LITTLE BREAK</span><h2 id="menu-title">森でひと休み</h2><p>旅の記録は、この端末に自動保存されます。</p><label class="setting-row" for="quality">描画品質<select id="quality"><option value="auto">自動（おすすめ）</option><option value="low">軽量</option><option value="high">高画質</option></select></label><label class="setting-row" for="sensitivity">カメラ感度<input id="sensitivity" type="range" min="0.4" max="1.8" step="0.1" value="1"></label><button id="resume-button" class="primary-button">旅をつづける</button><button id="home-button" class="secondary-button">はじまりの小径へ戻る</button><details><summary>操作のヒント</summary><p>左スティックで移動、右側をスワイプで視点変更。ダッシュは長押し、ジャンプはタップ。PCでは WASD / 矢印、Shift、Space、ドラッグ。Esc でメニュー。</p><p>8つの星灯りと3つの風景を探しましょう。Ver.0.1は自由探索編です。戦闘は今後追加予定。</p></details></div>
+    </section>
+    <div id="rotate" class="rotate-screen"><span>▱ ↻</span><h2>森を、広く見渡そう。</h2><p>iPhoneを横向きにしてお楽しみください。</p></div>
+    <section id="error" class="overlay hidden" role="alert"><div class="menu-card"><span class="eyebrow">星灯りの森 3D</span><h2>森を開けませんでした</h2><p id="error-message"></p><button class="primary-button" onclick="location.reload()">もう一度読み込む</button></div></section>
+  </main>
+  <script>window.addEventListener('error',function(e){if(e.message&&document.getElementById('start-button').disabled){document.getElementById('error-message').textContent='読み込みに失敗しました。ページを再読み込みしてください。'+e.message;document.getElementById('error').classList.remove('hidden');}});</script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
