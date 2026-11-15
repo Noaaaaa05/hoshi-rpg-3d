@@ -75,7 +75,7 @@ git commit -m "Update to v0.2 combat and progression"
 git push origin HEAD:main
 ```
 
-Ver.0.1の基準コミットは `0fe4d51c3fbe74eceb15f3c1c14c48a358431137` です。`CHANGELOG.md` に差分と検証方法を記載しています。更新を戻す場合は履歴を強制上書きせず、Ver.0.2のコミットをGitHubでRevert（またはPCで `git revert`）してください。旧版は育成データを認識しないため、旧版へ戻す前にブラウザの保存データを控えてください。
+Ver.0.1の基準コミットは `0fe4d51c3fbe74eceb15f3c1c14c48a358431137` です。`CHANGELOG.md` に差分と検証方法を記載しています。更新を戻す場合は履歴を強制上書きせず、PCまたはCodespacesから `git revert` でVer.0.2の変更を打ち消すコミットを作成してください。旧版は育成データを認識しないため、旧版へ戻す前にブラウザの保存データを控えてください。
 
 ## iPhoneだけで更新する
 
