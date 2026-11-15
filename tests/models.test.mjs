@@ -34,6 +34,8 @@ test('six future animation states select authored clips and freeze at zero delta
   }
   const before=root.position.x;animator.update(0,motor,combat);assert.equal(root.position.x,before);
   assert.equal(Object.keys(animator.clips).length,6);
+  Object.assign(motor,{speed:0,dashing:false,grounded:true});Object.assign(combat,{attacking:false,dodging:false});
+  animator.update(2.2,motor,combat);assert.equal(animator.state,'idle');assert.ok(root.position.x>=0&&root.position.x<=1);
 });
 test('looping idle and repeated attacks restart the correct animation without inventing clips',()=>{
   const root=new THREE.Group(),clip=new THREE.AnimationClip('Sword_Slash',1,[new THREE.NumberKeyframeTrack('.position[x]',[0,1],[0,1])]);
