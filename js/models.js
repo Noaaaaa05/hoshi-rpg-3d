@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { heightAt } from './physics.js';
 
 // Keep URLs relative to this manifest, so GitHub Pages project paths work.
-export async function loadModels(scene, player, grid, onWarning = console.warn) {
+export async function loadModels(scene, player, grid, onWarning = console.warn, monsters = null) {
   const manifestURL = new URL('../assets/models/manifest.json', import.meta.url);
   const response = await fetch(manifestURL);
   if (!response.ok) throw new Error(`Model manifest: HTTP ${response.status}`);
@@ -31,17 +31,25 @@ export async function loadModels(scene, player, grid, onWarning = console.warn) 
       const mixer = new THREE.AnimationMixer(gltf.scene);
       const animationMap = manifest.player.animations || {};
       const actions = {};
-      for (const state of ['idle', 'walk', 'run', 'jump']) {
+      for (const state of ['idle', 'walk', 'run', 'jump', 'attack', 'dodge']) {
         const clip = THREE.AnimationClip.findByName(gltf.animations, animationMap[state] || state);
         if (clip) actions[state] = mixer.clipAction(clip);
       }
       let active = null;
-      player.animateModel = (dt, motor) => {
-        const next = !motor.grounded ? actions.jump : motor.speed > .2 ? (motor.dashing ? actions.run || actions.walk : actions.walk) : actions.idle;
+      player.animateModel = (dt, motor, combat) => {
+        const next = combat?.dodging ? actions.dodge || actions.run || actions.walk : combat?.attacking ? actions.attack || actions.idle : !motor.grounded ? actions.jump : motor.speed > .2 ? (motor.dashing ? actions.run || actions.walk : actions.walk) : actions.idle;
         if (next !== active) { active?.fadeOut(.18); next?.reset().fadeIn(.18).play(); active = next; }
         mixer.update(dt);
       };
     } catch (error) { onWarning('主人公GLBの読み込みに失敗。簡易モデルを使用します。', error); }
+  }
+  for (const type of ['slime', 'goblin']) {
+    const spec = manifest.monsters?.[type];
+    if (!spec || !monsters) continue;
+    try {
+      const { gltf, wrapper } = await load(spec);
+      monsters.replaceVisual(type, wrapper, gltf.animations, spec.animations);
+    } catch (error) { onWarning(`${type} のGLBを読み込めず、簡易モンスターを使用します。`, error); }
   }
   for (const spec of Array.isArray(manifest.objects) ? manifest.objects : []) {
     try {

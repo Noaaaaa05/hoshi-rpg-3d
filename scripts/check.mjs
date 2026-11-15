@@ -5,6 +5,6 @@ files.push('scripts/serve.mjs','scripts/check.mjs');
 for(const file of files){const r=spawnSync(process.execPath,['--check',file],{stdio:'inherit'});if(r.status!==0)process.exit(r.status||1);}
 JSON.parse(await readFile('assets/models/manifest.json','utf8'));
 const html=await readFile('index.html','utf8');
-for(const file of ['style.css','js/main.js','vendor/three/three.module.js','vendor/three/addons/loaders/GLTFLoader.js','vendor/three/addons/utils/BufferGeometryUtils.js','assets/icon.svg'])await readFile(file);
+for(const file of ['style.css','js/main.js','vendor/three/three.module.js','vendor/three/addons/loaders/GLTFLoader.js','vendor/three/addons/utils/BufferGeometryUtils.js','vendor/three/addons/utils/SkeletonUtils.js','assets/icon.svg'])await readFile(file);
 if(!html.includes('type="importmap"'))throw new Error('Missing module import map');
 console.log(`Syntax and static assets OK (${files.length} JavaScript files).`);

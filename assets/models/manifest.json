@@ -1,4 +1,8 @@
 {
   "player": null,
-  "objects": []
+  "objects": [],
+  "monsters": {
+    "slime": null,
+    "goblin": null
+  }
 }
