@@ -60,7 +60,7 @@ export function createWorld(scene) {
     instance(new THREE.ConeGeometry(1,1,7),material(palette[level]),trees.filter(t=>!t.deciduous).map(t=>({x:t.x,y:t.y+t.s*(3.3+level*1.45),z:t.z,sx:t.s*(2.25-level*.51),sy:t.s*(3.9-level*.6),sz:t.s*(2.25-level*.51),ry:t.rotation})));
   }
   for(let level=0;level<2;level++) instance(new THREE.IcosahedronGeometry(1,1),material(level?'#6b9876':'#53896c'),trees.filter(t=>t.deciduous).map(t=>({x:t.x+(level?.65:-.3)*t.s,y:t.y+(5.4+level)*t.s,z:t.z,sx:t.s*(2.5-level*.5),sy:t.s*2,sz:t.s*2.3,ry:t.rotation})));
-  for(const t of trees) grid.add({x:t.x,z:t.z,radius:t.s*.36,height:t.s*8});
+  for(const t of trees) grid.add({x:t.x,z:t.z,radius:t.s*.36,height:t.s*8,cameraRadius:t.s*2.3,canopyBottom:t.s*1.35});
 
   const rocks=[];
   for(let i=0;i<100;i++) {

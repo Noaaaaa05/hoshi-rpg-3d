@@ -19,10 +19,10 @@ if(renderer) init().catch(error=>{console.error(error);showError('ゲームの�
 
 async function init() {
   renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
-  const scene=new THREE.Scene();scene.background=new THREE.Color('#759b96');scene.fog=new THREE.FogExp2('#759b96',.013);
-  scene.add(new THREE.HemisphereLight('#dae7d1','#354b3c',2.4));
-  const sun=new THREE.DirectionalLight('#ffe5af',2.5);sun.position.set(-35,65,20);scene.add(sun);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+  const scene=new THREE.Scene();scene.background=new THREE.Color('#648a88');scene.fog=new THREE.FogExp2('#648a88',.013);
+  scene.add(new THREE.HemisphereLight('#c3dcd5','#30483f',1.7));
+  const sun=new THREE.DirectionalLight('#fce0b2',1.8);sun.position.set(-35,65,20);scene.add(sun);
   const camera=new THREE.PerspectiveCamera(57,1,.15,280);
   const world=createWorld(scene), motor=new PlayerMotor(world.grid), player=createPlayer(scene), input=new Input();
   const drawMap=createMap($('#minimap'),world);
@@ -35,7 +35,7 @@ async function init() {
   catch(error){console.warn('GLB設定を読み込めません。簡易モデルで続行します。',error);modelWarning=true;}
   if(saved?.position)motor.reset(saved.position.x,saved.position.z);
   let yaw=0,pitch=.31,started=false,paused=true,elapsed=0,last=performance.now(),saveTimer=0,hudTimer=0;
-  let toastTimer,discoveryTimer,wasComplete=collected.size===8&&discovered.size===3;
+  let toastTimer,discoveryTimer,ready=false,wasComplete=collected.size===8&&discovered.size===3;
   let pixelRatio=1,qualityTimer=0,frameSum=0,frameCount=0;
   const target=new THREE.Vector3(),desired=new THREE.Vector3(),lookAt=new THREE.Vector3(motor.x,motor.y+1.2,motor.z);
   camera.position.set(motor.x,motor.y+3.7,motor.z+8);
@@ -64,9 +64,8 @@ async function init() {
     if(isPortrait())return;
     paused=false;input.enabled=true;input.reset();$('#menu').classList.add('hidden');last=performance.now();
   }
-  $('#start-button').textContent=saved?'旅のつづきへ　 →':'森を歩きはじめる　 →';$('#start-button').disabled=false;
   $('#start-button').addEventListener('click',()=>{
-    started=true;$('#intro').classList.add('hidden');resume();
+    started=true;document.body.classList.remove('intro-active');$('#intro').classList.add('hidden');resume();
     if(!save())toast('このブラウザでは保存できません。探索中はそのまま遊べます。');
     else if(modelWarning)toast('一部の追加モデルを読み込めず、簡易モデルで開始しました');
     else toast(saved?'おかえりなさい、星の旅人。':'小径の星灯りを追いかけてみよう。');
@@ -89,7 +88,10 @@ async function init() {
     for(let t=.12;t<=1;t+=.055) {
       const x=THREE.MathUtils.lerp(target.x,desired.x,t),z=THREE.MathUtils.lerp(target.z,desired.z,t),y=THREE.MathUtils.lerp(target.y,desired.y,t);
       let blocked=false;
-      for(const c of world.grid.query(x,z,.35))if(Math.hypot(x-c.x,z-c.z)<c.radius+.28&&y<heightAt(c.x,c.z)+c.height+.3){blocked=true;break;}
+      for(const c of world.grid.query(x,z,4)){
+        const base=heightAt(c.x,c.z),radius=c.cameraRadius&&y>base+c.canopyBottom?c.cameraRadius:c.radius;
+        if(Math.hypot(x-c.x,z-c.z)<radius+.28&&y<base+c.height+.3){blocked=true;break;}
+      }
       if(blocked){desired.lerpVectors(target,desired,Math.max(.15,t-.09));break;}
     }
     desired.y=Math.max(desired.y,heightAt(desired.x,desired.z)+.65);
@@ -142,6 +144,7 @@ async function init() {
     world.update(elapsed);player.update(dt,motor,heightAt(motor.x,motor.z));updateModels(dt);
     updateCamera(dt);hudTimer+=dt;if(hudTimer>.1){hudTimer=0;updateHUD();}
     renderer.render(scene,camera);
+    if(!ready){ready=true;$('#start-button').textContent=saved?'旅のつづきへ　 →':'森を歩きはじめる　 →';$('#start-button').disabled=false;}
   }
   applyQuality();resize();updateCamera(0,true);updateHUD();player.update(0,motor,heightAt(motor.x,motor.z));
   if(new URLSearchParams(location.search).has('debug'))Object.defineProperty(window,'__HOSHI_DEBUG__',{get:()=>({

@@ -5,3 +5,4 @@
 @media(orientation:portrait) and (pointer:coarse){.rotate-screen{display:flex}}
 @media(max-width:650px) and (orientation:landscape){.area-label{display:none}.compass{top:21px}.quest{top:83px}.minimap-wrap{width:70px}.minimap-wrap canvas{width:66px;height:66px}.north{left:31px}.map-caption{font-size:7px}.vitals{width:159px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.intro-active .hud{visibility:hidden}
