@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
-import { createPlayer } from './player.js';
+import { createPlayer } from './player.js?v=0.2.0';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
-import { Input } from './input.js';
+import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
-import { loadModels } from './models.js';
-import { loadSave, writeSave } from './storage.js';
-import { CombatSystem, ENEMY_TYPES } from './combat.js';
-import { createMonsters } from './monsters.js';
+import { loadModels } from './models.js?v=0.2.0';
+import { loadSave, writeSave } from './storage.js?v=0.2.0';
+import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.0';
+import { createMonsters } from './monsters.js?v=0.2.0';
 
 const $=selector=>document.querySelector(selector);
 let renderer;

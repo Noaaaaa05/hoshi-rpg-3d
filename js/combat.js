@@ -150,6 +150,7 @@ export class CombatSystem {
       return;
     }
     if(e.state==='recover'){e.moving=false;e.stateTime-=dt;if(e.stateTime<=0)e.state=canChase?'chase':'return';return;}
+    if(e.state==='return'&&homeDistance>1.5){this.moveEnemy(e,e.homeX,e.homeZ,c.speed,dt);return;}
     if(canChase&&(distance<8.5||e.state==='chase')){
       e.state='chase';
       if(distance<=c.range){e.state='windup';e.stateTime=c.windup;e.angle=Math.atan2(m.x-e.x,m.z-e.z);e.moving=false;}

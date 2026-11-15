@@ -50,6 +50,10 @@ test('simultaneous enemy strikes respect player damage invulnerability',()=>{
   const {combat,motor}=arena([{type:'slime',x:20,z:-1.5},{type:'slime',x:20.1,z:-1.5}]);
   advance(combat,.85);assert.equal(motor.hp,92);
 });
+test('leashed enemies return home instead of oscillating at the chase boundary',()=>{
+  const {combat,motor}=arena();const e=combat.enemies[0];e.z=-19;e.state='chase';motor.reset(20,-21);
+  advance(combat,.8);assert.equal(e.state,'return');assert.ok(e.z>-18);
+});
 test('dodge evades a telegraphed strike, costs stamina and cannot bypass obstacles or cooldown',()=>{
   const {combat,motor,grid}=arena();advance(combat,.45);assert.equal(combat.enemies[0].state,'windup');
   grid.add({x:21.2,z:0,radius:.35});
