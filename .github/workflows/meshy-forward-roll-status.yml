@@ -1,18 +1,35 @@
 name: Meshy forward roll status (FREE GET only)
 on:
   workflow_dispatch:
+  # Run the existing task lookup from the isolated retrieval branch.
+  push:
+    branches: ['codex/meshy-fetch-forward-roll']
+    paths: ['.github/workflows/meshy-forward-roll-status.yml']
 permissions:
   contents: read
 jobs:
   inspect:
+    if: github.repository == 'Noaaaaa05/hoshi-rpg-3d'
     runs-on: ubuntu-latest
     timeout-minutes: 3
-    env:
-      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check existing task status (single GET; zero credits)
+      - name: Check existing task and retrieve finished Swift clip
+        id: status
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          MESHY_DOWNLOAD_DIR: ${{ runner.temp }}/meshy-forward-roll
         run: node scripts/meshy/check-forward-roll-status.mjs
+      - name: Keep only the downloaded motion
+        if: steps.status.outputs.downloaded == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-forward-roll-bvh
+          path: ${{ runner.temp }}/meshy-forward-roll/forward-roll.bvh
+          if-no-files-found: error
+          retention-days: 1
