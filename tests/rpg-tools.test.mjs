@@ -70,6 +70,21 @@ test('zones, exits and star lights must stay reachable around prop colliders', (
   assert.match(star.errors.join(), /star light 0 at \(1, 3\) unreachable/);
 });
 
+test('a building footprint is a box that turns with its model', () => {
+  const wall = (halfX, halfZ) => lint(c => {
+    c.zones.watchpost.exit = 'trail-rest';
+    c.placements.gate = { zone: 'watchpost', model: 'watchpost-hut', x: 4.8, z: 5.5, yaw: .5, colliderBox: [halfX, halfZ] };
+  });
+  // A thin wall leaves room beside it. A wide one covers every place the exit can be used from.
+  assert.deepEqual(wall(2.2, .4).errors, []);
+  assert.match(wall(2.2, 1.4).errors.join(), /zones\.watchpost: the exit cannot be used/);
+  const invalid = change => assert.throws(() => lint(change), /invalid prop collider/);
+  invalid(c => { c.placements['mina-trail'].colliderBox = [1, 1]; });
+  invalid(c => { c.placements['watchpost-lamp'].colliderBox = [1, 1]; });
+  invalid(c => { c.placements['watchpost-shelter'].colliderBox = [0, 1]; });
+  invalid(c => { c.placements['watchpost-shelter'].colliderBox = [1, 1, 1]; });
+});
+
 test('content that can never appear is reported as a warning', () => {
   const { errors, warnings } = lint(c => {
     c.actors.mina.role = 'npc';

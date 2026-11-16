@@ -1,4 +1,4 @@
-import { SPAWN, WORLD_RADIUS } from './physics.js';
+import { SPAWN, WORLD_RADIUS } from './physics.js?v=0.2.8';
 
 export const CONTENT_PATH = 'assets/rpg/catalog.json';
 export const CATEGORIES = ['models', 'motions', 'actors', 'zones', 'placements', 'dialogues', 'quests', 'items', 'skills'];
@@ -98,14 +98,17 @@ export function validateCatalog(catalog) {
   const placedCompanions = new Set();
   let enemyCount = 0;
   record(catalog.placements, 'placements', 48, (spec, path) => {
-    shape(spec, path, ['zone', 'model', 'actor', 'x', 'z', 'yaw', 'collider']);
+    shape(spec, path, ['zone', 'model', 'actor', 'x', 'z', 'yaw', 'collider', 'colliderBox']);
     requireValue(ref('zones', spec.zone) && Number.isFinite(spec.x) && Number.isFinite(spec.z) &&
       optional(spec.yaw, v => number(v, -Math.PI, Math.PI)), path, 'invalid zone or placement');
     const zone = catalog.zones[spec.zone];
     requireValue(Math.hypot(spec.x - zone.x, spec.z - zone.z) <= zone.radius, path, 'placement is outside its zone');
     requireValue(spec.actor === undefined ? ref('models', spec.model) : spec.model === undefined && ref('actors', spec.actor),
       path, 'specify one model or actor');
-    requireValue(optional(spec.collider, v => spec.actor === undefined && number(v, .1, 4)), path, 'invalid prop collider');
+    // A round prop has a radius. A building has half extents along its own x and z, turned by its yaw.
+    requireValue(optional(spec.collider, v => spec.actor === undefined && number(v, .1, 4)) &&
+      optional(spec.colliderBox, v => spec.actor === undefined && spec.collider === undefined &&
+        Array.isArray(v) && v.length === 2 && v.every(half => number(half, .1, 8))), path, 'invalid prop collider');
     const actor = spec.actor === undefined ? undefined : catalog.actors[spec.actor];
     if (actor?.role === 'enemy') {
       enemyCount++;

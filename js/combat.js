@@ -1,5 +1,5 @@
 // Combat is independent of Three.js. The v0.1 movement solver remains unchanged.
-import { cameraMovement, clamp, heightAt, SPAWN } from './physics.js';
+import { cameraMovement, clamp, heightAt, insideCollider, SPAWN } from './physics.js?v=0.2.8';
 import { selectDodge, DODGE_DURATION, LAND_DURATION, ROLL_DURATION, rollTravelFraction } from './motion-state.js?v=0.2.6';
 
 export const ENEMY_TYPES = Object.freeze({
@@ -141,7 +141,7 @@ export class CombatSystem {
     const distance=Math.hypot(bx-ax,bz-az),steps=Math.max(1,Math.ceil(distance/.3));
     for(let i=1;i<steps;i++){
       const x=ax+(bx-ax)*i/steps,z=az+(bz-az)*i/steps;
-      for(const c of this.grid.query(x,z,.05))if(Math.hypot(x-c.x,z-c.z)<c.radius)return false;
+      for(const c of this.grid.query(x,z,.05))if(insideCollider(c,x,z))return false;
     }
     return true;
   }

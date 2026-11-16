@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CollisionGrid, PlayerMotor, cameraMovement, heightAt, WORLD_RADIUS } from '../js/physics.js';
+import { CollisionGrid, PlayerMotor, cameraMovement, heightAt, insideCollider, WORLD_RADIUS } from '../js/physics.js';
 import { loadSave, writeSave } from '../js/storage.js';
 const input=(extra={})=>({x:0,y:0,dash:false,jump:false,...extra});
 test('camera-relative movement supports every direction without diagonal speed gain',()=>{
@@ -44,4 +44,24 @@ test('save validation removes corrupt positions and progress; denied storage rem
   value='{"version":1,"position":{"x":9999,"z":0}}';assert.equal(loadSave().position,null);
   globalThis.localStorage={getItem:()=>{throw Error('denied');},setItem:()=>{throw Error('denied');}};
   assert.equal(loadSave(),null);assert.equal(writeSave({}),false);delete globalThis.localStorage;
+});
+test('a turned box collider keeps the hero outside its walls from every side',()=>{
+  const box={x:10,z:-4,radius:Math.hypot(3,1),shape:'box',halfX:3,halfZ:1,angle:.6},grid=new CollisionGrid();grid.add(box);
+  // The long side of the box points along its own x axis, turned by the yaw of the model.
+  const along=(d)=>[10+Math.cos(.6)*d,-4-Math.sin(.6)*d],across=(d)=>[10+Math.sin(.6)*d,-4+Math.cos(.6)*d];
+  assert.ok(insideCollider(box,...along(2.9))&&!insideCollider(box,...along(3.1))&&insideCollider(box,...along(3.1),.2));
+  assert.ok(insideCollider(box,...across(.9))&&!insideCollider(box,...across(1.1)));
+  const gap=p=>{
+    const dx=p.x-10,dz=p.z+4,lx=dx*Math.cos(.6)-dz*Math.sin(.6),lz=dx*Math.sin(.6)+dz*Math.cos(.6);
+    return Math.hypot(Math.max(0,Math.abs(lx)-3),Math.max(0,Math.abs(lz)-1));
+  };
+  for(let a=0;a<Math.PI*2;a+=.05)for(const r of [0,.4,1.5,3.2]){
+    const p=grid.resolve(10+Math.sin(a)*r,-4+Math.cos(a)*r);
+    assert.ok(gap(p)>=.38-1e-9,`angle ${a} radius ${r}`);
+  }
+  const far=grid.resolve(10+Math.sin(.6)*1.5,-4+Math.cos(.6)*1.5);
+  assert.deepEqual(far,{x:10+Math.sin(.6)*1.5,z:-4+Math.cos(.6)*1.5});
+  // An unturned box and a circle answer as before.
+  assert.ok(insideCollider({x:0,z:0,shape:'box',halfX:2,halfZ:1},1.9,.9)&&!insideCollider({x:0,z:0,shape:'box',halfX:2,halfZ:1},.5,1.1));
+  assert.ok(insideCollider({x:0,z:0,radius:1},.6,.6)&&!insideCollider({x:0,z:0,radius:1},.8,.8));
 });

@@ -12,6 +12,16 @@ export function cameraMovement(x, y, yaw) {
   return { x: (x * Math.cos(yaw) + y * Math.sin(yaw)) / length * magnitude,
     z: (-x * Math.sin(yaw) + y * Math.cos(yaw)) / length * magnitude, magnitude };
 }
+// Whether (x, z) lies inside a collider grown by margin. A box may be turned by `angle`, the yaw of its model.
+export function insideCollider(c, x, z, margin = 0) {
+  let dx = x - c.x, dz = z - c.z;
+  if (c.shape !== 'box') return Math.hypot(dx, dz) < c.radius + margin;
+  if (c.angle) {
+    const cos = Math.cos(c.angle), sin = Math.sin(c.angle);
+    [dx, dz] = [dx * cos - dz * sin, dx * sin + dz * cos];
+  }
+  return Math.abs(dx) < c.halfX + margin && Math.abs(dz) < c.halfZ + margin;
+}
 export class CollisionGrid {
   constructor(cellSize = 8) { this.cellSize = cellSize; this.cells = new Map(); this.items = []; }
   key(x, z) { return `${Math.floor(x / this.cellSize)},${Math.floor(z / this.cellSize)}`; }
@@ -38,6 +48,20 @@ export class CollisionGrid {
     for (let pass = 0; pass < 4; pass++) {
       for (const c of this.query(x, z, radius)) {
         const dx = x - c.x, dz = z - c.z;
+        if (c.shape === 'box' && c.angle) {
+          // Resolve in the frame of the turned box, then return to world axes.
+          const cos = Math.cos(c.angle), sin = Math.sin(c.angle);
+          let lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
+          const bx = lx - Math.max(-c.halfX, Math.min(lx, c.halfX)), bz = lz - Math.max(-c.halfZ, Math.min(lz, c.halfZ));
+          const bd = Math.hypot(bx, bz);
+          if (bd < radius) {
+            if (bd > .00001) { lx += bx / bd * (radius - bd); lz += bz / bd * (radius - bd); }
+            else if (c.halfX - Math.abs(lx) < c.halfZ - Math.abs(lz)) lx = (lx < 0 ? -1 : 1) * (c.halfX + radius);
+            else lz = (lz < 0 ? -1 : 1) * (c.halfZ + radius);
+            x = c.x + lx * cos + lz * sin; z = c.z - lx * sin + lz * cos;
+          }
+          continue;
+        }
         if (c.shape === 'box') {
           const qx = Math.max(c.x - c.halfX, Math.min(x, c.x + c.halfX));
           const qz = Math.max(c.z - c.halfZ, Math.min(z, c.z + c.halfZ));

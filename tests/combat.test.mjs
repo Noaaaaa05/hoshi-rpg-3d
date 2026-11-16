@@ -107,3 +107,11 @@ test('v0.1 saves migrate in place; v0.2 keeps XP, HP and exploration across relo
   const restored=loadSave();assert.equal(restored.progression.level,3);assert.equal(restored.progression.xp,17);assert.equal(restored.hp,88);assert.deepEqual(restored.landmarks,['gate']);
   delete globalThis.localStorage;
 });
+test('a building blocks an attack through its walls but not one that passes its corner',()=>{
+  const grid=new CollisionGrid(),motor=new PlayerMotor(grid);
+  grid.add({x:0,z:0,radius:3.3,shape:'box',halfX:2.5,halfZ:2,height:5.5});
+  const combat=new CombatSystem(motor,grid,null,[]);
+  assert.equal(combat.lineClear(-3,0,3,0),false);
+  // This line stays outside the walls, inside the circle that bounds them.
+  assert.equal(combat.lineClear(2.9,.2,2.9,1.4),true);
+});

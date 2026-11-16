@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { heightAt } from './physics.js';
+import { heightAt } from './physics.js?v=0.2.8';
 
 // Lightweight playable village prototype. Uses no paid services or external assets.
 export function createVillage(scene, grid, {initialInventory, onInventoryChange, healPlayer} = {}) {

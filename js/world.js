@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CollisionGrid, heightAt, SPAWN } from './physics.js';
+import { CollisionGrid, heightAt, SPAWN } from './physics.js?v=0.2.8';
 
 export const LANDMARKS = [
   { id:'gate', name:'星詠みの石門', x:0, z:-28, radius:8 },

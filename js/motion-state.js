@@ -1,4 +1,4 @@
-import { cameraMovement } from './physics.js';
+import { cameraMovement } from './physics.js?v=0.2.8';
 
 export const MOTION_STATES = ['roll','dodgeLeft','dodgeRight','dodgeBack','land'];
 export const DODGE_DURATION = .36;

@@ -1,4 +1,4 @@
-import { clamp, heightAt } from './physics.js';
+import { clamp, heightAt } from './physics.js?v=0.2.8';
 import { createRpgVisuals } from './rpg-visuals.js';
 
 export async function createRpgWorld(scene, grid, catalog, progress, warn) {
@@ -12,11 +12,15 @@ export async function createRpgWorld(scene, grid, catalog, progress, warn) {
   }));
   const characters = [], enemySpawns = [], enemyVisuals = [];
   for (const {id, entry, actor, visual} of placements) {
-    const {x, z, yaw, collider} = entry;
+    const {x, z, yaw, collider, colliderBox} = entry;
     visual.group.position.set(x, heightAt(x,z), z);
     visual.group.rotation.y = yaw ?? 0;
     scene.add(visual.group);
     if (collider) grid.add({x, z, radius:collider, height:catalog.models[entry.model].height});
+    if (colliderBox) {
+      const [halfX, halfZ] = colliderBox;
+      grid.add({x, z, radius:Math.hypot(halfX, halfZ), shape:'box', halfX, halfZ, angle:yaw ?? 0, height:catalog.models[entry.model].height});
+    }
     if (actor?.role === 'enemy') {
       enemySpawns.push({x, z, type:'rpg-' + entry.actor, contentActor:entry.actor, contentPlacement:id, config:{...actor.enemy, name:actor.name}});
       enemyVisuals.push({id, visual});
