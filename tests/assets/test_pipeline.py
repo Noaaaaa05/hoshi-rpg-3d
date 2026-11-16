@@ -60,6 +60,8 @@ class PipelineTests(unittest.TestCase):
         archive=self.archive({'sheet.png':self.sheet()});out=self.root/'out'
         first,cached=extract(archive,out);self.assertFalse(cached)
         second,cached=extract(archive,out);self.assertTrue(cached);self.assertEqual(first,second)
+        (out/'review.js').write_text('broken viewer');extract(archive,out)
+        self.assertNotEqual((out/'review.js').read_text(),'broken viewer')
         (out/first['assets'][0]['png']).write_bytes(b'corrupt')
         (out/'review.json').write_text('human review');(out/'generated').mkdir();(out/'generated/paid.glb').write_bytes(b'paid result')
         repaired,cached=extract(archive,out);self.assertFalse(cached);self.assertEqual(first,repaired)

@@ -28,6 +28,13 @@ def save_json(path, value):
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
     tmp.replace(path)
 
+def write_review(out,catalog):
+    for name in ["review.js","review.css"]:
+        shutil.copyfile(ROOT/"tools/asset_pipeline"/name,out/name)
+    template=(ROOT/"tools/asset_pipeline/review.html").read_text()
+    embedded=json.dumps(catalog,ensure_ascii=False).replace("<","\\u003c").replace("&","\\u0026")
+    (out/"index.html").write_text(template.replace("__CATALOG_JSON__",embedded),encoding="utf8")
+
 def archive_images(file):
     """Validate every ZIP member first; never extract or execute attached documents."""
     with zipfile.ZipFile(file) as z:
@@ -373,6 +380,7 @@ def extract(input_file, output, profile=None, force=False, corrections=None):
         intact= intact and all((output/name).is_file() for name in ['index.html','review.js','review.css','quality.json'])
         intact= intact and all((output/s["original"]).is_file() and sha((output/s["original"]).read_bytes())==s["sha256"] and (output/s["overlay"]).is_file() for s in existing["sources"] if s.get("status")!='decode_failed')
         if intact and all((output/a["png"]).is_file() and sha((output/a["png"]).read_bytes())==a["png_sha256"] and (output/a["thumbnail"]).is_file() for a in existing["assets"]):
+            write_review(output,existing)
             return existing, True
     if output.exists() and not (output/".hoshi-private-batch").is_file():
         raise ValueError("Refusing to replace an unmanaged output directory")
@@ -406,11 +414,7 @@ def extract(input_file, output, profile=None, force=False, corrections=None):
             "summary":summary,"sources":sources,"assets":assets}
         save_json(staging/"catalog.json",catalog)
         save_json(staging/"quality.json",{"summary":summary,"sources":sources,"failures":[{"id":a["id"],"flags":a["flags"]} for a in assets if a["quality"]=="failed"]})
-        for name in ["review.js","review.css"]:
-            shutil.copyfile(ROOT/"tools/asset_pipeline"/name,staging/name)
-        template = (ROOT/"tools/asset_pipeline/review.html").read_text()
-        embedded = json.dumps(catalog,ensure_ascii=False).replace("<","\\u003c").replace("&","\\u0026")
-        (staging/"index.html").write_text(template.replace("__CATALOG_JSON__",embedded),encoding="utf8")
+        write_review(staging,catalog)
         (staging/".hoshi-private-batch").write_text(key+"\n"+sha((staging/"catalog.json").read_bytes()))
         if output.exists():
             # Keep paid results and human ledgers. Their old hashes/fingerprints
