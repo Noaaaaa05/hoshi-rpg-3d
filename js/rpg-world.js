@@ -41,10 +41,11 @@ export async function createRpgWorld(scene, grid, catalog, progress, warn) {
       const d = Math.hypot(motor.x-position.x, motor.z-position.z);
       if (d < distance) { nearest = character; distance = d; }
     }
-    if (nearest) return nearest;
     const zone = areaAt(motor.x, motor.z);
-    if (zone?.exit && zone.distance < 1.65) return {id:zone.id, exit:catalog.zones[zone.exit]};
-    return null;
+    const exit = zone?.exit && zone.distance < 1.65 ? {id:zone.id, exit:catalog.zones[zone.exit]} : null;
+    // A recruited companion follows within talk range. At an exit, offer the exit and not the companion.
+    if (nearest && !(exit && progress.companions.includes(nearest.actorId))) return nearest;
+    return exit;
   }
 
   function bindEnemies(combat) {

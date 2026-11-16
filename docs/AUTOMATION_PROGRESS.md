@@ -50,3 +50,15 @@
 | 森の木・岩・石門 | 円錐、多面体、箱 | `js/world.js` |
 
 置き換えにはMeshyの有料生成が必要になる。対象ごとに現行の料金で見積もりを出し、所有者の承認を得てから実行する。
+
+## 2026-11-17 Claude Codeでの作業（2回目）
+
+| 項目 | 状態 |
+| --- | --- |
+| PR #20（検査、GLBの計測、公開URLの照合、セッション内のブラウザテスト） | マージ済み。PRと `main` の `Game checks` が合格し、`Pages verification` の初回実行で公開URLと `main` が一致した |
+| PR #19（引き継ぎ資料、表示バージョン0.2.4） | マージ済み。`Pages verification` で公開URLと `main` が一致した |
+| 前転（PR #16）の確認 | ブラウザテスト「the published forward roll plays once and returns to idle」が、Chromiumの2プロジェクトとWebKitで合格した |
+| 移動ボタンの不具合 | 修正した。付いてくる仲間が近くても、`exit` のあるエリアで「移動」が出る |
+| Meshy | このセッションではリクエストを送っていない。クレジットの消費はない |
+
+次の作業は、キャラクターと小物を生成するMeshyの経路（[AUTOMATION_ROADMAP.md](AUTOMATION_ROADMAP.md) の優先度3）。実装は無料で進め、実行の前に見積もりを出して所有者の承認を待つ。
