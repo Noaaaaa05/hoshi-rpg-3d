@@ -30,7 +30,7 @@ export function createPlayer(scene) {
   mesh(new THREE.CylinderGeometry(.035,.035,.15,5),leather,0,.035,0,sword);
   const glow = new THREE.PointLight('#ffd48b',3.5,6,2); glow.position.set(.4,1,0); group.add(glow);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(.46,20),new THREE.MeshBasicMaterial({color:'#092c2b',transparent:true,opacity:.28,depthWrite:false})); shadow.rotation.x = -Math.PI/2; scene.add(shadow);
-  let phase = 0, idleTime = 0, idleBlend = 0, customModel = null, modelBaseScale = null;
+  let phase = 0, idleTime = 0, idleBlend = 0, customModel = null, modelBaseScale = null, rollAngle = 0;
   const fallbackInfo = {loaded:false,type:'procedural',mode:'procedural',minY:0,clips:[],states:{}};
   const api = { group, animateModel: null, modelInfo: {...fallbackInfo},
     getModelStatus() {
@@ -43,7 +43,7 @@ export function createPlayer(scene) {
     },
     restoreVisual() {
       if(customModel)group.remove(customModel);
-      customModel=null;modelBaseScale=null;visual.visible=true;api.animateModel=null;api.animationStatus=null;api.modelInfo={...fallbackInfo};
+      customModel=null;modelBaseScale=null;rollAngle=0;visual.visible=true;api.animateModel=null;api.animationStatus=null;api.modelInfo={...fallbackInfo};
     },
     update(dt, motor, ground, combat) {
       group.position.set(motor.x,motor.y,motor.z); group.rotation.y = motor.angle;
@@ -52,10 +52,17 @@ export function createPlayer(scene) {
       idleBlend = THREE.MathUtils.damp(idleBlend,resting?1:0,5,Math.max(0,dt));
       idleTime += Math.max(0,dt);
       const breath = Math.sin(idleTime * 2.45) * idleBlend;
-      if(customModel && modelBaseScale && !api.modelInfo?.states?.idle) {
+      if(customModel && modelBaseScale) {
         customModel.scale.copy(modelBaseScale);
-        customModel.scale.y *= 1 + breath * .0035;
+        customModel.scale.y *= 1 + breath * .002;
       }
+      // Rotate the actual rendered character around its mid-height during dodge.
+      // The physics motor still owns movement/collisions; the roll is visual only.
+      const rolling = combat?.dodging && combat?.dodgeType === 'roll';
+      const angle = rolling ? Math.PI * 2 * Math.max(0,Math.min(1,combat.dodgePhase)) : 0;
+      const rollTarget = customModel || visual;
+      rollTarget.rotation.x = angle;
+      rollTarget.position.y = rolling ? .95 * (1 - Math.cos(angle)) + .08 * Math.sin(Math.PI * combat.dodgePhase) : 0;
       if(visual.visible){
       phase += dt * motor.speed * 2.1;
       const swing = Math.min(1,motor.speed/3.5)*.6;
@@ -67,9 +74,9 @@ export function createPlayer(scene) {
         arms[0].rotation.x = -1.15 - Math.sin(p*Math.PI)*.45;
         arms[0].rotation.z = Math.sin((p-.1)*Math.PI*1.3)*1.3;
       }
-      visual.rotation.x = combat?.dodging ? -.45 : 0;
-      visual.position.y = motor.grounded ? Math.abs(Math.sin(phase))*swing*.055 + breath*.008 : .04;
-      visual.scale.y = 1 + breath*.012;
+      // Roll rotation is handled above; don't overwrite it with the old lean.
+      if(!rolling) visual.position.y = motor.grounded ? Math.abs(Math.sin(phase))*swing*.055 + breath*.004 : .04;
+      visual.scale.y = 1 + breath*.004;
       arms[0].rotation.z += breath*.012;
       arms[1].rotation.z = -breath*.012;
       cape.rotation.x = -.12 + motor.speed*.025;
