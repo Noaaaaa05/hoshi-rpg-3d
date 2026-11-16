@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { heightAt } from './physics.js';
 
 // Lightweight playable village prototype. Uses no paid services or external assets.
-export function createVillage(scene, grid) {
+export function createVillage(scene, grid, {initialInventory, onInventoryChange, healPlayer} = {}) {
   const root=new THREE.Group();scene.add(root);
   const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:1,flatShading:true});
   const wall=mat('#e6d4ad'),roof=mat('#547b8a'),wood=mat('#775a49'),skin=mat('#e8b991'),cloth=mat('#517aab'),gold=mat('#e9c47d');
@@ -47,32 +47,44 @@ export function createVillage(scene, grid) {
     grid.add({x:data.x,z:data.z,radius:.42,height:2.1});
     return {...data,group:g};
   });
-  const inventory={herbs:0,gold:100};
+  const inventory={
+    herbs:Number.isInteger(initialInventory?.herbs)?Math.max(0,Math.min(999,initialInventory.herbs)):0,
+    gold:Number.isInteger(initialInventory?.gold)?Math.max(0,Math.min(999999,initialInventory.gold)):100
+  };
+  const persist=()=>onInventoryChange?.({...inventory});
+  const walletText=()=>`所持金: ${inventory.gold}G / 薬草: ${inventory.herbs}個`;
   let open=false;
   const panel=document.createElement('div');
   panel.id='village-dialog';
   panel.style.cssText='position:fixed;z-index:40;left:50%;bottom:21%;transform:translateX(-50%);width:min(90vw,470px);padding:16px;background:#102b35ed;border:2px solid #d7bd79;border-radius:15px;color:white;font:16px system-ui;display:none;text-align:center;box-shadow:0 8px 30px #0008';
-  panel.innerHTML='<strong id="village-name"></strong><p id="village-line"></p><p id="village-wallet"></p><button id="village-buy" type="button">薬草を買う（20G）</button> <button id="village-close" type="button">閉じる</button>';
+  panel.innerHTML='<strong id="village-name"></strong><p id="village-line"></p><p id="village-wallet"></p><button id="village-buy" type="button">薬草を買う（20G）</button> <button id="village-use" type="button">薬草を使う（HP +30）</button> <button id="village-close" type="button">閉じる</button>';
   document.body.append(panel);
   const interact=document.createElement('button');interact.type='button';interact.textContent='話す';interact.setAttribute('aria-label','近くの村人と話す');
   interact.style.cssText='position:fixed;z-index:35;right:16px;top:46%;padding:13px 18px;border:2px solid #d7bd79;border-radius:24px;background:#163e4d;color:white;font:bold 15px system-ui;display:none';
   document.body.append(interact);
   const name=panel.querySelector('#village-name'),line=panel.querySelector('#village-line'),wallet=panel.querySelector('#village-wallet'),buy=panel.querySelector('#village-buy');
+  const use=panel.querySelector('#village-use');
   const buttonStyle='padding:10px;border-radius:9px;border:0;background:#d7bd79;color:#17303a;font-weight:bold';
-  buy.style.cssText=buttonStyle;panel.querySelector('#village-close').style.cssText=buttonStyle;
+  buy.style.cssText=buttonStyle;use.style.cssText=buttonStyle;panel.querySelector('#village-close').style.cssText=buttonStyle;
   let nearest=null;
   function close(){open=false;panel.style.display='none';}
   function talk(){
     if(!nearest)return;
     open=true;panel.style.display='block';name.textContent=nearest.name;line.textContent=nearest.lines[0];
-    buy.style.display=nearest.shop?'inline-block':'none';wallet.textContent=nearest.shop?`所持金: ${inventory.gold}G / 薬草: ${inventory.herbs}個`:'';
+    buy.style.display=nearest.shop?'inline-block':'none';wallet.textContent=walletText();
   }
   interact.addEventListener('click',talk);
   panel.querySelector('#village-close').addEventListener('click',close);
   buy.addEventListener('click',()=>{
     if(inventory.gold<20){line.textContent='お金が足りないようだね。';return;}
-    inventory.gold-=20;inventory.herbs++;line.textContent='薬草を1個購入した！';
-    wallet.textContent=`所持金: ${inventory.gold}G / 薬草: ${inventory.herbs}個`;
+    if(inventory.herbs>=999){line.textContent='薬草はこれ以上持てないよ。';return;}
+    inventory.gold-=20;inventory.herbs++;persist();line.textContent='薬草を1個購入した！';
+    wallet.textContent=walletText();
+  });
+  use.addEventListener('click',()=>{
+    if(inventory.herbs<1){line.textContent='薬草を持っていないよ。';return;}
+    if(!healPlayer?.(30)){line.textContent='HPは満タンだよ。';return;}
+    inventory.herbs--;persist();line.textContent='薬草を使ってHPを30回復した！';wallet.textContent=walletText();
   });
   const onKey=e=>{if(e.code==='KeyE'&&!e.repeat){if(open)close();else if(nearest)talk();}};
   window.addEventListener('keydown',onKey);
