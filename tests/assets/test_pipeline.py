@@ -102,5 +102,10 @@ class PipelineTests(unittest.TestCase):
         catalog,_=extract(self.archive({'sheet.png':image}),self.root/'out',{'sources':{'sheet.png':{'category':'armor','splitSaddles':True}}})
         self.assertEqual(len(catalog['assets']),2)
         self.assertTrue(all('split_contact_review' in a['flags'] for a in catalog['assets']))
+    def test_two_connected_figures_are_flagged_even_when_they_are_not_wide(self):
+        image=Image.new('RGB',(130,100),'white');draw=ImageDraw.Draw(image)
+        draw.rectangle((5,5,55,95),fill='red');draw.rectangle((65,5,115,95),fill='blue');draw.line((55,80,65,80),fill='black')
+        catalog,_=extract(self.archive({'sheet.png':image}),self.root/'out',{'sources':{'sheet.png':{'category':'character'}}})
+        self.assertEqual(len(catalog['assets']),1);self.assertIn('multi_lobe_review',catalog['assets'][0]['flags'])
 
 if __name__=='__main__':unittest.main()

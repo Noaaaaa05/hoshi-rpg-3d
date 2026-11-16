@@ -292,6 +292,8 @@ def process_source(name, data, image, spec, out, corrections=None):
         if category in {'character','monster','armor','building'} and width/height>2.2:
             flags.append('wide_object_review')
         crop = image.crop(box)
+        if selection and len(selection[1])>1:
+            flags.append('fragment_join_review')
         if mode == "black":
             a = np.asarray(crop).copy()
             a[:,:,3] = np.max(a[:,:,:3], axis=2)
@@ -310,6 +312,12 @@ def process_source(name, data, image, spec, out, corrections=None):
                     selected_mask[:,x2-box[0]:]=False
             a[:,:,3] = np.minimum(a[:,:,3], selected_mask.astype(np.uint8)*255)
             crop = Image.fromarray(a)
+        support=np.asarray(crop.getchannel('A'))>36
+        cores,number_of_cores=ndi.label(ndi.binary_erosion(support,iterations=3),np.ones((3,3)))
+        if number_of_cores:
+            core_sizes=np.bincount(cores.ravel())[1:]
+            if sum(core_sizes>=max(80,float(support.sum())*.12))>1:
+                flags.append('multi_lobe_review')
         png = f"crops/{asset_id}.png"
         crop.save(out/png)
         thumb = crop.copy()

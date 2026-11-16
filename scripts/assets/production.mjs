@@ -48,7 +48,7 @@ export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publ
   const sources=new Map(catalog.sources.map(s=>[s.id,s]));
   // The first model pilot targets the five production roles requested by the
   // owner. Nature remains catalogued and can be selected explicitly later.
-  const pool=catalog.assets.filter(a=>!['magic','nature','unknown'].includes(review.assets?.[a.id]?.category||a.category)&&!a.flags.some(f=>['watermark_present','empty_cell','duplicate_exact','duplicate_possible','merged_or_scene_review','split_contact_review','wide_object_review'].includes(f)))
+  const pool=catalog.assets.filter(a=>!['magic','nature','unknown'].includes(review.assets?.[a.id]?.category||a.category)&&!a.flags.some(f=>['watermark_present','empty_cell','duplicate_exact','duplicate_possible','merged_or_scene_review','split_contact_review','wide_object_review','fragment_join_review','multi_lobe_review'].includes(f)))
     .sort((a,b)=>Number(a.flags.includes('low_resolution'))-Number(b.flags.includes('low_resolution')) || Number(a.flags.some(f=>f.startsWith('touches')))-Number(b.flags.some(f=>f.startsWith('touches'))) || b.width*b.height-a.width*a.height || a.id.localeCompare(b.id));
   const ordered=[];
   for(let round=0;ordered.length<pool.length;round++){
