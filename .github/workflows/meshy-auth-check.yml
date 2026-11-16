@@ -1,0 +1,43 @@
+name: Meshy API authentication check (free)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Verify Meshy authentication using free balance endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${MESHY_API_KEY:-}" ]; then
+            echo "::error::MESHY_API_KEY is not configured."
+            exit 1
+          fi
+          # Only a single GET request to Meshy's documented free endpoint.
+          # Never echo the key or the raw response; never retry.
+          status=$(curl --silent --show-error --max-time 20 --retry 0 \
+            --output /tmp/meshy-balance.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${MESHY_API_KEY}" \
+            --header 'Accept: application/json' \
+            'https://api.meshy.ai/openapi/v1/balance')
+          if [ "$status" != "200" ]; then
+            echo "::error::Meshy authentication check failed (HTTP $status)."
+            exit 1
+          fi
+          node -e '
+            const fs=require("fs");
+            const result=JSON.parse(fs.readFileSync("/tmp/meshy-balance.json","utf8"));
+            if (!Number.isInteger(result.balance) || result.balance<0) {
+              console.error("Meshy returned an unexpected balance response.");
+              process.exit(1);
+            }
+            console.log("Meshy API authentication succeeded.");
+            console.log("Available credits: "+result.balance);
+            console.log("No generation or paid endpoint was called.");
+          '
+          rm -f /tmp/meshy-balance.json
