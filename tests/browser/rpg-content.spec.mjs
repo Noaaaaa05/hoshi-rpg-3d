@@ -1,24 +1,41 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { applyOperations, emptyCatalog } from '../../js/rpg-content.js';
+import { applyOperations, CONTENT_PATH, emptyCatalog, parseCatalog } from '../../js/rpg-content.js';
 const authored = JSON.parse(await readFile('docs/requests/watchpost.json','utf8'));
 const catalog = applyOperations(emptyCatalog(), authored);
+const registered = parseCatalog(await readFile(CONTENT_PATH,'utf8'));
 
 test('a catalog quest can be played, rewarded, and restored from a landscape touch session',async({page},info)=>{
   test.skip(info.project.name==='chromium-desktop','Chromium touch and mobile WebKit cover this interaction');
   const errors=[];
   page.on('pageerror', error=>errors.push(error.message));
-  await page.route('**/assets/rpg/catalog.json', route=>route.fulfill({json:catalog}));
+  if(!Object.hasOwn(registered.quests,'watchpost-round')) {
+    await page.route('**/assets/rpg/catalog.json', route=>route.fulfill({json:catalog}));
+  }
   await page.addInitScript(()=>{
     const key='hoshi-rpg-3d:v0.1';
     if(!localStorage.getItem(key))localStorage.setItem(key, JSON.stringify({version:2,position:{x:0,z:12},quality:'low'}));
   });
   const debug=()=>page.evaluate(()=>window.__HOSHI_DEBUG__);
   const tap=async name=>page.getByRole('button',{name,exact:true}).tap();
-  const walk=async (key,condition)=>{
-    await page.keyboard.down(key);
-    try { await expect.poll(condition,{timeout:18000}).toBe(true); }
-    finally { await page.keyboard.up(key); }
+  const walk=async (code,axis,position,direction)=>{
+    // Observe game frames directly. Polling across the browser connection can
+    // release the key too late and move past a narrow entrance on a busy runner.
+    const end=await page.evaluate(({code,axis,position,direction})=>new Promise(resolve=>{
+      const deadline=performance.now()+15000;
+      const signal=type=>window.dispatchEvent(new KeyboardEvent(type,{code,bubbles:true}));
+      const frame=()=>{
+        const {x,z}=window.__HOSHI_DEBUG__.player;
+        const reached=(({x,z})[axis]-position)*direction>=0;
+        if(reached||performance.now()>=deadline) {
+          signal('keyup');
+          resolve({reached,x,z});
+        } else requestAnimationFrame(frame);
+      };
+      signal('keydown');
+      requestAnimationFrame(frame);
+    }),{code,axis,position,direction});
+    expect(end).toMatchObject({reached:true});
   };
   const npc=page.getByRole('button',{name:'見張り番ミナと話す'});
   await page.goto('/hoshi-rpg-3d/?debug=1');
@@ -28,9 +45,10 @@ test('a catalog quest can be played, rewarded, and restored from a landscape tou
   await tap('見回りを引き受ける');
   await expect.poll(async()=>(await debug()).rpg.quests['watchpost-round']?.state).toBe('active');
   await page.locator('#rpg-dialog button').last().tap();
-  await walk('d',async()=>(await debug()).player.x>3.7);
-  await walk('w',async()=>(await debug()).rpg.quests['watchpost-round']?.state==='ready');
-  await walk('s',async()=>(await debug()).player.z>9.8);
+  await walk('KeyD','x',3.5,1);
+  await walk('KeyW','z',7.1,-1);
+  await expect.poll(async()=>(await debug()).rpg.quests['watchpost-round']?.state).toBe('ready');
+  await walk('KeyS','z',9.8,1);
   await npc.tap();
   await tap('見回りを報告する');
   await tap('ミナを仲間にする');
