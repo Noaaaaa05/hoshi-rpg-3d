@@ -1,7 +1,7 @@
 name: Game checks
 on:
   push:
-    branches: [main, work, 'codex/**']
+    branches: [main, work, 'codex/**', 'claude/**']
   pull_request:
   workflow_dispatch:
 permissions:

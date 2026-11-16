@@ -3,6 +3,7 @@ import { readFile, rename, stat, writeFile, mkdtemp, rm } from 'node:fs/promises
 import path from 'node:path';
 import { CONTENT_PATH, MAX_CATALOG_BYTES, applyOperations, parseCatalog } from '../../js/rpg-content.js';
 import { checkCatalogAssets, sha256 } from './catalog-assets.mjs';
+import { lintCatalog } from './catalog-lint.mjs';
 
 const [mode, source, option] = process.argv.slice(2);
 if (process.argv.length < 3 || process.argv.length > 5 ||
@@ -21,6 +22,8 @@ try {
   }
   const serialized = JSON.stringify(catalog, null, 2) + '\n';
   parseCatalog(serialized);
+  const { errors, warnings } = lintCatalog(catalog);
+  if (errors.length) throw new Error('The catalog validates but cannot be played as authored:\n' + errors.join('\n'));
   const report = await checkCatalogAssets(root, catalog);
   if (option === '--write') {
     const staging = await mkdtemp(path.join(path.dirname(file), '.rpg-catalog-'));
@@ -30,7 +33,7 @@ try {
       await rename(path.join(staging, 'catalog.json'), file);
     } finally { await rm(staging, { recursive: true, force: true }); }
   }
-  console.log(JSON.stringify({ mode, written: option === '--write', catalogSHA256: sha256(serialized), ...report }, null, 2));
+  console.log(JSON.stringify({ mode, written: option === '--write', catalogSHA256: sha256(serialized), ...report, warnings }, null, 2));
 } finally {
   if (lease !== undefined) {
     closeSync(lease);

@@ -7,7 +7,7 @@ import { loadGLB, readGLB } from '../meshy/glb.mjs';
 
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
-function budgetModel(json, bytes) {
+export function budgetModel(json, bytes) {
   let triangles = 0;
   if (!json.meshes?.length || json.meshes.length > 8) throw new Error('Expected 1–8 meshes');
   for (const mesh of json.meshes) for (const primitive of mesh.primitives) {
