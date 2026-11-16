@@ -1,25 +1,13 @@
 name: Meshy existing task (free)
 on:
-  workflow_dispatch:
-    inputs:
-      kind:
-        description: Meshy task endpoint
-        type: choice
-        required: true
-        options: [motion, animation, rigging, text-to-3d, image-to-3d]
-      task:
-        description: Existing task UUID
-        type: string
-        required: true
-      download:
-        description: Keep the finished asset for one day
-        type: boolean
-        default: false
+  push:
+    branches: ['workbench/meshy-existing-task-verification']
+    paths: ['.github/workflows/meshy-existing-task.yml']
 permissions:
   contents: read
 jobs:
   retrieve:
-    if: github.ref_name == github.event.repository.default_branch
+    if: github.repository == 'Noaaaaa05/hoshi-rpg-3d' && github.ref_name == 'workbench/meshy-existing-task-verification'
     runs-on: ubuntu-24.04
     timeout-minutes: 4
     steps:
@@ -31,9 +19,9 @@ jobs:
           node-version: '22'
       - name: Retrieve the existing Meshy task
         env:
-          TASK_KIND: ${{ inputs.kind }}
-          TASK_ID: ${{ inputs.task }}
-          DOWNLOAD: ${{ inputs.download }}
+          TASK_KIND: motion
+          TASK_ID: 01a1e4b0-d14f-73d6-ab4e-9ff7c372edf1
+          DOWNLOAD: 'true'
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
           set -euo pipefail
@@ -41,7 +29,6 @@ jobs:
           if [ "$DOWNLOAD" = true ]; then args+=("$RUNNER_TEMP/meshy-existing-task"); fi
           node scripts/meshy/retrieve-task.mjs "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Store the asset and sanitized task metadata
-        if: inputs.download
         uses: actions/upload-artifact@v4
         with:
           name: meshy-existing-task
