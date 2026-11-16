@@ -72,6 +72,10 @@ test('mocked model production reserves once, saves GLBs privately and never incl
   assert.ok(api.calls.every(c=>c.endpoint==='/image-to-3d'&&c.body.target_formats[0]==='glb'&&c.body.image_url.startsWith('data:image/png;base64,')));
   assert.ok(Object.values(report.tasks).every(s=>s.status==='model_received_pending_3d_review'));
   const journal=await readFile(path.join(output,'state.json'),'utf8');assert.ok(!/data:image|https:|Bearer/.test(journal));
+  const recovery=client();
+  const recovered=await generateModels({...f,plan,approval:approval(plan),output,client:recovery,beforeCharge:async()=>reserved++,resume:path.join(output,'state.json')});
+  assert.equal(recovery.calls.length,0);assert.equal(reserved,1);assert.equal(recovered.confirmedCredits,240);
+  await assert.rejects(generateModels({...f,plan,approval:approval(plan),output,client:recovery,beforeCharge:async()=>reserved++}),/Existing generation journal/);
 });
 test('ambiguous paid submissions cannot be repeated, and changed PNGs stop before approval reservation',async t=>{
   const f=await fixture(t,{clear:true}),plan=makePlan(f.catalog,f.review),output=path.join(f.root,'models');
