@@ -81,11 +81,12 @@ export function createVillage(scene, grid, {initialInventory, onInventoryChange,
     inventory.gold-=20;inventory.herbs++;persist();line.textContent='薬草を1個購入した！';
     wallet.textContent=walletText();
   });
-  use.addEventListener('click',()=>{
-    if(inventory.herbs<1){line.textContent='薬草を持っていないよ。';return;}
-    if(!healPlayer?.(30)){line.textContent='HPは満タンだよ。';return;}
-    inventory.herbs--;persist();line.textContent='薬草を使ってHPを30回復した！';wallet.textContent=walletText();
-  });
+  function useHerb(){
+    if(inventory.herbs<1)return '薬草を持っていないよ。';
+    if(!healPlayer?.(30))return 'HPは満タンだよ。';
+    inventory.herbs--;persist();wallet.textContent=walletText();return '薬草を使ってHPを30回復した！';
+  }
+  use.addEventListener('click',()=>{line.textContent=useHerb();});
   const onKey=e=>{if(e.code==='KeyE'&&!e.repeat){if(open)close();else if(nearest)talk();}};
   window.addEventListener('keydown',onKey);
   return {
@@ -97,6 +98,7 @@ export function createVillage(scene, grid, {initialInventory, onInventoryChange,
       for(let i=0;i<npcs.length;i++)npcs[i].group.rotation.y=Math.sin(time*.65+i)*.18;
     },
     getInventory:()=>({...inventory}),
+    useHerb,
     dispose(){window.removeEventListener('keydown',onKey);panel.remove();interact.remove();scene.remove(root);}
   };
 }

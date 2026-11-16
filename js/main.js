@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
 import { createVillage } from './village.js';
-import { createPlayer } from './player.js?v=0.2.3';
+import { createPlayer } from './player.js?v=0.2.5';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
@@ -33,6 +33,25 @@ async function init() {
   const combat=new CombatSystem(motor,world.grid,saved?.progression),monsters=createMonsters(scene,combat);
   if(saved)motor.hp=saved.hp;
   const village=createVillage(scene,world.grid,{initialInventory:saved?.villageInventory,onInventoryChange:()=>save(),healPlayer:(amount)=>{if(motor.hp>=combat.progression.maxHP)return false;motor.hp=Math.min(combat.progression.maxHP,motor.hp+amount);return true;}});
+  const inventoryPanel=$('#inventory-panel'),inventoryButton=$('#inventory-button');
+  function refreshInventory(){
+    const inv=village.getInventory();
+    $('#inventory-gold').textContent=`所持金 ${inv.gold}G`;
+    $('#inventory-herb').textContent=`🌿 薬草 ×${inv.herbs}　使う（HP +30）`;
+    $('#inventory-herb').disabled=inv.herbs===0;
+  }
+  function closeInventory(){inventoryPanel.classList.add('hidden');}
+  inventoryButton.addEventListener('click',()=>{
+    if(!started||paused)return;
+    inventoryPanel.classList.toggle('hidden');
+    $('#inventory-message').textContent='';
+    refreshInventory();
+  });
+  $('#inventory-close').addEventListener('click',closeInventory);
+  $('#inventory-herb').addEventListener('click',()=>{
+    $('#inventory-message').textContent=village.useHerb();
+    refreshInventory();
+  });
   let quality=saved?.quality || 'auto';input.sensitivity=saved?.sensitivity || 1;
   $('#quality').value=quality;$('#sensitivity').value=String(input.sensitivity);
   for(const star of world.stars)star.group.visible=!collected.has(star.id);
@@ -64,7 +83,7 @@ async function init() {
   }
   function pause() {
     if(!started)return;
-    paused=true;input.enabled=false;input.reset();$('#menu').classList.remove('hidden');save();
+    closeInventory();paused=true;input.enabled=false;input.reset();$('#menu').classList.remove('hidden');save();
   }
   function resume() {
     if(isPortrait())return;

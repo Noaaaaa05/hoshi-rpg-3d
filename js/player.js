@@ -30,7 +30,7 @@ export function createPlayer(scene) {
   mesh(new THREE.CylinderGeometry(.035,.035,.15,5),leather,0,.035,0,sword);
   const glow = new THREE.PointLight('#ffd48b',3.5,6,2); glow.position.set(.4,1,0); group.add(glow);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(.46,20),new THREE.MeshBasicMaterial({color:'#092c2b',transparent:true,opacity:.28,depthWrite:false})); shadow.rotation.x = -Math.PI/2; scene.add(shadow);
-  let phase = 0, customModel = null;
+  let phase = 0, idleTime = 0, idleBlend = 0, customModel = null, modelBaseScale = null;
   const fallbackInfo = {loaded:false,type:'procedural',mode:'procedural',minY:0,clips:[],states:{}};
   const api = { group, animateModel: null, modelInfo: {...fallbackInfo},
     getModelStatus() {
@@ -39,14 +39,23 @@ export function createPlayer(scene) {
     },
     replaceVisual(model,info) {
       if(customModel)group.remove(customModel);
-      customModel=model;group.add(model);visual.visible=false;api.modelInfo=info;
+      customModel=model;modelBaseScale=model.scale.clone();group.add(model);visual.visible=false;api.modelInfo=info;
     },
     restoreVisual() {
       if(customModel)group.remove(customModel);
-      customModel=null;visual.visible=true;api.animateModel=null;api.animationStatus=null;api.modelInfo={...fallbackInfo};
+      customModel=null;modelBaseScale=null;visual.visible=true;api.animateModel=null;api.animationStatus=null;api.modelInfo={...fallbackInfo};
     },
     update(dt, motor, ground, combat) {
       group.position.set(motor.x,motor.y,motor.z); group.rotation.y = motor.angle;
+      // Breathing blends in when standing still, without overriding combat or authored animation.
+      const resting = motor.grounded && motor.speed < .18 && !combat?.attacking && !combat?.dodging;
+      idleBlend = THREE.MathUtils.damp(idleBlend,resting?1:0,5,Math.max(0,dt));
+      idleTime += Math.max(0,dt);
+      const breath = Math.sin(idleTime * 2.45) * idleBlend;
+      if(customModel && modelBaseScale && !api.modelInfo?.states?.idle) {
+        customModel.scale.copy(modelBaseScale);
+        customModel.scale.y *= 1 + breath * .0035;
+      }
       if(visual.visible){
       phase += dt * motor.speed * 2.1;
       const swing = Math.min(1,motor.speed/3.5)*.6;
@@ -59,7 +68,10 @@ export function createPlayer(scene) {
         arms[0].rotation.z = Math.sin((p-.1)*Math.PI*1.3)*1.3;
       }
       visual.rotation.x = combat?.dodging ? -.45 : 0;
-      visual.position.y = motor.grounded ? Math.abs(Math.sin(phase))*swing*.055 : .04;
+      visual.position.y = motor.grounded ? Math.abs(Math.sin(phase))*swing*.055 + breath*.008 : .04;
+      visual.scale.y = 1 + breath*.012;
+      arms[0].rotation.z += breath*.012;
+      arms[1].rotation.z = -breath*.012;
       cape.rotation.x = -.12 + motor.speed*.025;
       }
       shadow.position.set(motor.x,ground+.025,motor.z); shadow.scale.setScalar(1+Math.max(0,motor.y-ground)*.16);

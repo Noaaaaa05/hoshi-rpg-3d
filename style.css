@@ -9,3 +9,18 @@
 .xp i{background:linear-gradient(90deg,#658caa,#a8bfd2);transform:scaleX(0)}.experience{opacity:.85}.experience>span{font-size:7px}.experience .meter{height:3px}.experience>small{font-size:7px}.combat-controls{position:absolute;right:max(224px,calc(env(safe-area-inset-right) + 202px));bottom:max(65px,calc(env(safe-area-inset-bottom) + 22px));display:flex;gap:12px;align-items:flex-end}.attack{width:82px;height:82px;border-color:#ebc785b0;background:linear-gradient(145deg,#d8a45b35,#25444088);color:#f7dd9f}.dodge{width:66px;height:66px}.attack .action-symbol{font-size:29px}.action.swinging{box-shadow:0 0 18px #edc98b44}.combat-controls .exhausted{opacity:.45}.enemy-target{position:absolute;top:124px;left:50%;transform:translateX(-50%);width:180px;font-size:10px;text-align:center}.enemy-target>div:first-child{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}.enemy-target #enemy-health{font-size:8px;color:#e1cfb2;font-variant-numeric:tabular-nums}.enemy-meter{height:4px;background:#1c3435bb}.enemy-meter i{background:linear-gradient(90deg,#a97f60,#dac28b)}#enemy-threat{display:block;height:14px;margin-top:6px;color:#f2b28a;font-size:9px;letter-spacing:.1em}.battle-stats{padding:10px 0;font-size:10px;color:#cbd9bc;border-bottom:1px solid #bbcca329}.battle-stats b{font-weight:500;color:#e8d6a8}.damage-flash{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;background:radial-gradient(ellipse,transparent 45%,#be563759);transition:opacity .12s}.damage-flash.visible{opacity:1}#damage-numbers{position:absolute;inset:0;pointer-events:none;overflow:hidden}.damage-number{display:none;position:absolute;left:0;top:0;color:#ffe7a5;font-size:21px;font-weight:700;text-shadow:0 2px 3px #17322f,0 0 8px #19362c;will-change:transform,opacity}.damage-number.hurt{color:#f5a78d}
 @media(max-height:540px){.experience{height:9px;margin-top:2px}.combat-controls{right:max(190px,calc(env(safe-area-inset-right) + 173px));bottom:max(42px,calc(env(safe-area-inset-bottom) + 12px));gap:12px}.attack{width:72px;height:72px}.dodge{width:56px;height:56px}.enemy-target{top:89px;width:160px;font-size:9px}.enemy-target>div:first-child{margin-bottom:5px}.damage-number{font-size:17px}}
 @media(max-width:650px) and (orientation:landscape){.combat-controls{gap:9px}.attack{width:64px;height:64px}.dodge{width:52px;height:52px}.enemy-target{top:52px;left:53%;width:136px;font-size:8px}#enemy-threat{font-size:8px}.experience>small{width:39px}}
+
+/* Quick inventory sits next to dodge for right-thumb access on landscape phones. */
+.inventory-action{width:58px;height:58px;border-color:#c8d7a088}
+.inventory-action .action-symbol{font-size:27px}
+.inventory-panel{position:absolute;z-index:12;right:max(22px,env(safe-area-inset-right));bottom:145px;width:min(300px,72vw);padding:16px;background:#102e32f2;border:1px solid #e0cc94a8;border-radius:14px;box-shadow:0 10px 35px #061d20aa;pointer-events:auto;color:#f2ebd4;font:14px system-ui}
+.inventory-panel.hidden{display:none}
+.inventory-panel strong{font-size:17px}
+.inventory-panel p{margin:9px 0}
+.inventory-panel button{touch-action:manipulation;min-height:44px;padding:9px 12px;margin:4px 0;background:#d6c28f;color:#173735;border:0;border-radius:9px;font-weight:700}
+.inventory-panel button:disabled{opacity:.45}
+#inventory-herb{display:block;width:100%;text-align:left}
+#inventory-close{display:block;margin-left:auto}
+#inventory-message{font-size:12px;min-height:16px}
+@media(max-height:540px){.inventory-action{width:49px;height:49px}.inventory-panel{bottom:112px;padding:11px;font-size:12px;max-height:calc(100dvh - 120px);overflow:auto}}
+@media(max-width:650px) and (orientation:landscape){.inventory-action{width:45px;height:45px}.inventory-action .action-symbol{font-size:23px}}
