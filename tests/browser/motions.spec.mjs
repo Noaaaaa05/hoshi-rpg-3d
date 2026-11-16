@@ -23,9 +23,36 @@ async function start(page){
   await page.goto('/hoshi-rpg-3d/?debug=1');await expect(page.locator('#start-button')).toBeEnabled({timeout:20000});await page.locator('#start-button').click();
   await page.evaluate(()=>{
     window.__MOTION_TRACE__=[];
-    const observe=()=>{const s=window.__HOSHI_DEBUG__;window.__MOTION_TRACE__.push({state:s.playerModel.animation?.state,weights:s.playerModel.animation?.weights});if(window.__MOTION_TRACE__.length>600)window.__MOTION_TRACE__.shift();requestAnimationFrame(observe);};observe();
+    const observe=()=>{
+      const s=window.__HOSHI_DEBUG__,animation=s.playerModel.animation;
+      window.__MOTION_TRACE__.push({state:animation?.state,clip:animation?.clip,time:animation?.time,weights:animation?.weights});
+      if(window.__MOTION_TRACE__.length>600)window.__MOTION_TRACE__.shift();
+      requestAnimationFrame(observe);
+    };observe();
   });
 }
+test('the published forward roll plays once and returns to idle',async({page},info)=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await start(page);
+  const getState=()=>page.evaluate(()=>window.__HOSHI_DEBUG__);
+  const initial=await getState();
+  expect(initial.playerModel.motionStates).toContain('roll');
+  expect(initial.playerModel.rejectedMotions).toEqual([]);
+  if(info.project.name==='chromium-desktop')await page.keyboard.press('k');
+  else await page.locator('#dodge-button').tap();
+  await expect.poll(async()=>(await getState()).combat.dodgeSerial,{timeout:15000}).toBe(1);
+  await expect.poll(async()=>(await getState()).combat.dodging,{timeout:15000}).toBe(false);
+  const end=await getState();
+  expect(end.combat.dodgeType).toBe('roll');
+  expect(initial.player.z-end.player.z).toBeCloseTo(3.6,1);
+  expect(end.playerModel.animation.state).toBe('idle');
+  const samples=await page.evaluate(()=>window.__MOTION_TRACE__.filter(sample=>sample.state==='roll'));
+  expect(samples.length).toBeGreaterThan(3);
+  expect(samples.every(sample=>sample.clip==='Hoshi_roll')).toBe(true);
+  expect(samples.at(-1).time-samples[0].time).toBeGreaterThan(.35);
+  expect(errors).toEqual([]);
+});
+
 test('local motion packs select directional dodges, preserve facing and land without forcing idle',async({page},info)=>{
   test.skip(info.project.name==='chromium-desktop','Mobile/WebKit coverage for the optional motion pipeline.');
   const errors=[];page.on('pageerror',e=>errors.push(e.message));

@@ -1,6 +1,6 @@
 import * as THREE from '../vendor/three/three.module.js';
-import { trimClip } from './model-utils.js';
-import { MOTION_STATES } from './motion-state.js';
+import { trimClip } from './model-utils.js?v=0.2.6';
+import { MOTION_STATES, motionDuration } from './motion-state.js?v=0.2.6';
 
 // Compare actual bind data, not a filename, bone count, or a claimed fingerprint.
 export async function rigProfile(gltf) {
@@ -91,7 +91,7 @@ export async function loadMotionLibrary(base,entries,loader,manifestURL,onWarnin
       const candidate=await loader.parseAsync(bytes,'');
       assertCompatibleRig(baseRig,await rigProfile(candidate));
       const clip=prepareMotion(base.scene,candidate.animations,entry,state);
-      if(clip.duration/(state==='land'?.2:.36)>2.5)throw new Error('Playback is too fast; review the clip range');
+      if(clip.duration/motionDuration(state)>2.5)throw new Error('Playback is too fast; review the clip range');
       clips.push(clip);mapping[state]=clip.name;
     }catch(error){rejected.push(state);onWarning(`追加モーション ${state} を適用せず、従来の表示を継続します。`,error);}
     finally{clearTimeout(timer);}

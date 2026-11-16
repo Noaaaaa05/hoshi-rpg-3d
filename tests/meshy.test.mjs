@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile,mkdir,mkdtemp,cp,rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
+import * as THREE from '../vendor/three/three.module.js';
 import path from 'node:path';
 import { planGeneration,runPipeline,createClient } from '../scripts/meshy/pipeline.mjs';
 import { loadGLB,readGLB,writeGLB,animationPack,validateMotion } from '../scripts/meshy/glb.mjs';
 import { rigProfile,assertCompatibleRig,prepareMotion } from '../js/motion-library.js';
-import { MOTION_STATES,selectDodge } from '../js/motion-state.js';
-import { createPlayerAnimator } from '../js/model-utils.js';
+import { MOTION_STATES,ROLL_DURATION,selectDodge } from '../js/motion-state.js';
+import { attachSword,createFootGrounding,createPlayerAnimator,prepareModel } from '../js/model-utils.js';
 import { PlayerMotor,CollisionGrid } from '../js/physics.js';
 import { CombatSystem } from '../js/combat.js';
 
@@ -132,6 +134,42 @@ test('directional dodges keep facing, travel and resource rules; landing is dete
     for(let i=0;i<80;i++)combat.step(1/60,{x:0,y:0},0);
     assert.equal(combat.landingSerial,1);assert.equal(motor.grounded,true);
   }
+});
+test('the shipped Meshy clip makes one forward roll on the 66-joint hero',async()=>{
+  const {player:spec}=JSON.parse(await readFile('assets/models/manifest.json','utf8'));
+  const entry=spec.motionLibrary.roll;
+  const bytes=await readFile(path.join('assets/models',entry.url));
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),entry.sha256);
+  const {json}=readGLB(bytes);
+  assert.equal(json.skins[0].joints.length,66);
+  assert.ok(!json.meshes&&!json.images);
+  const report=await validateMotion(baseBytes,bytes,'roll',entry,originalConfig);
+  assert.ok(Math.abs(report.duration-ROLL_DURATION)<.001);
+  assert.ok(report.worstPenetration>-.02);
+
+  const hero=await loadGLB(baseBytes),pack=await loadGLB(bytes);
+  const clip=prepareMotion(hero.scene,pack.animations,entry,'roll');
+  const {wrapper}=prepareModel(hero,spec),grounding=createFootGrounding(wrapper,spec.footOffset,true);
+  attachSword(hero.scene,spec.weapon);
+  const sword=hero.scene.getObjectByName('HeroSword'),hips=hero.scene.getObjectByName('mixamorigHips');
+  const mixer=new THREE.AnimationMixer(hero.scene);
+  const action=mixer.clipAction(clip).setLoop(THREE.LoopOnce,1);
+  action.clampWhenFinished=true;action.play();
+  const up=new THREE.Vector3(),rotation=new THREE.Quaternion(),swordBounds=new THREE.Box3();
+  let pitch=0,previous=null,minUp=1,worstSwordY=Infinity;
+  for(let i=0;i<=144;i++){
+    mixer.setTime(clip.duration*i/144);grounding.update('roll');
+    const angle=Math.atan2(up.set(0,1,0).applyQuaternion(hips.getWorldQuaternion(rotation)).z,up.y);
+    if(previous!==null){
+      const delta=angle-previous;
+      pitch+=Math.atan2(Math.sin(delta),Math.cos(delta));
+    }
+    previous=angle;minUp=Math.min(minUp,up.y);
+    worstSwordY=Math.min(worstSwordY,swordBounds.setFromObject(sword,true).min.y);
+  }
+  assert.ok(minUp<-.85&&up.y>.95,'hips invert and then return upright');
+  assert.ok(pitch>Math.PI*1.85&&pitch<Math.PI*2.15,'hips make one forward revolution');
+  assert.ok(worstSwordY>-.03,'the sword clears the floor throughout the roll within 3 cm');
 });
 test('new one-shot states blend into current locomotion instead of forcing idle',async()=>{
   const gltf=await loadGLB(baseBytes),clips=MOTION_STATES.map(state=>prepareMotion(gltf.scene,gltf.animations,{clip:'Idle_03',range:[0,state==='land'?.3:.5]},state));

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from '../../vendor/three/three.module.js';
 import { rigProfile, assertCompatibleRig, prepareMotion } from '../../js/motion-library.js';
 import { prepareModel, createFootGrounding } from '../../js/model-utils.js';
-import { DODGE_DURATION, LAND_DURATION } from '../../js/motion-state.js';
+import { motionDuration } from '../../js/motion-state.js';
 
 export function readGLB(bytes) {
   if(bytes.length<28||bytes.readUInt32LE(0)!==0x46546c67||bytes.readUInt32LE(4)!==2||bytes.readUInt32LE(8)!==bytes.length)
@@ -69,7 +69,7 @@ export async function validateMotion(baseBytes,candidateBytes,state,spec,options
   const base=await loadGLB(baseBytes),candidate=await loadGLB(candidateBytes);
   assertCompatibleRig(await rigProfile(base),await rigProfile(candidate));
   const clip=prepareMotion(base.scene,candidate.animations,spec,state);
-  const duration=state==='land'?LAND_DURATION:DODGE_DURATION,timeScale=clip.duration/duration;
+  const timeScale=clip.duration/motionDuration(state);
   if(timeScale>(options.maxTimeScale||2.5))throw new Error(`${state}: playback would be ${timeScale.toFixed(2)}x; set a reviewed clip range before integration`);
   const {wrapper}=prepareModel(base,{height:1.9}),grounding=createFootGrounding(wrapper,0,true);
   if(!grounding)throw new Error('Foot contacts cannot be checked');

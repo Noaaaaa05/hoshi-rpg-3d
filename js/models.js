@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { heightAt } from './physics.js';
-import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.3';
-import { loadMotionLibrary } from './motion-library.js?v=0.2.3';
+import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.6';
+import { loadMotionLibrary } from './motion-library.js?v=0.2.6';
 
 // Keep URLs relative to this manifest, so GitHub Pages project paths work.
 export async function loadModels(scene, player, grid, onWarning = console.warn, monsters = null) {
-  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.3', import.meta.url);
+  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.6', import.meta.url);
   const response = await fetch(manifestURL);
   if (!response.ok) throw new Error(`Model manifest: HTTP ${response.status}`);
   const manifest = await response.json();
