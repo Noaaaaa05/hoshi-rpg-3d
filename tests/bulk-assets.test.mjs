@@ -61,6 +61,9 @@ test('exact paid approval is required before reservation, upload or network call
     await assert.rejects(generateModels({...f,plan,approval:{...approval(plan),...changed},output:path.join(f.root,'models'),client:api,beforeCharge:async()=>reserved++}),/approval/);
   }
   assert.equal(reserved,0);assert.equal(api.calls.length,0);
+  const altered=structuredClone(plan);altered.entries[0].png_sha256='0'.repeat(64);
+  await assert.rejects(generateModels({...f,plan:altered,approval:approval(plan),output:path.join(f.root,'models'),client:api,beforeCharge:async()=>reserved++}),/Plan changed/);
+  assert.equal(reserved,0);assert.equal(api.calls.length,0);
 });
 test('mocked model production reserves once, saves GLBs privately and never includes images or signed URLs in the journal',async t=>{
   const f=await fixture(t,{clear:true}),plan=makePlan(f.catalog,f.review),api=client();let reserved=0;

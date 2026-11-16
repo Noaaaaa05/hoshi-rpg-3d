@@ -1,4 +1,5 @@
-import { readFile,writeFile,mkdir,realpath,rename } from 'node:fs/promises';
+import { readFile,writeFile,mkdir,realpath,rename,stat } from 'node:fs/promises';
+import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { createClient } from '../meshy/pipeline.mjs';
@@ -80,6 +81,7 @@ export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publ
 export async function localAsset(batch,asset){
   const root=await realpath(batch),file=await realpath(path.join(root,asset.png));
   if(!file.startsWith(root+path.sep))throw new Error('Asset symlink leaves the batch');
+  if((await stat(file)).size>20*1024*1024)throw new Error('PNG exceeds the API input byte limit');
   const bytes=await readFile(file);
   if(bytes.length>20*1024*1024||hash(bytes)!==asset.png_sha256||!bytes.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')))throw new Error('PNG bytes do not match the reviewed asset');
   if(bytes.length<24||bytes.readUInt32BE(16)!==asset.width||bytes.readUInt32BE(20)!==asset.height)throw new Error('PNG dimensions differ');
@@ -90,7 +92,7 @@ async function persist(file,value){await writeFile(file+'.tmp',JSON.stringify(va
 export async function generateModels({catalog,review,plan,batch,output,approval,client,beforeCharge,apiKey,resume,publication=false}={}){
   if(!client&&(!apiKey||typeof apiKey!=='string'))throw new Error('API key is unavailable');
   const recomputed=makePlan(catalog,review,{...plan.selection,publication});
-  if(recomputed.sha256!==plan.sha256)throw new Error('Plan changed after review');
+  if(!isDeepStrictEqual(recomputed,plan))throw new Error('Plan changed after review');
   const ready=plan.entries.filter(e=>e.ready);
   if(!ready.length)throw new Error('No rights-cleared and quality-approved assets');
   if(approval?.operation!=='image-to-3d'||approval.plan_sha256!==plan.sha256||!Array.isArray(approval.asset_ids)||JSON.stringify(approval.asset_ids)!==JSON.stringify(ready.map(e=>e.id))||approval.request_count!==ready.length||!Number.isSafeInteger(approval.max_credits)||approval.max_credits<plan.payableCredits||!beforeCharge)throw new Error('Explicit approval must match operation, exact IDs, request count and credit ceiling');
