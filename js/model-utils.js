@@ -1,6 +1,6 @@
 // This relative import also makes model transforms/animation testable in Node.
 import * as THREE from '../vendor/three/three.module.js';
-import { MOTION_STATES, DODGE_DURATION, LAND_DURATION } from './motion-state.js';
+import { MOTION_STATES, LAND_DURATION } from './motion-state.js';
 
 export const PLAYER_STATES = ['idle', 'walk', 'run', 'attack', 'jump', 'dodge'];
 const ALIASES = {idle:['idle'],walk:['walk','walking'],run:['run','running'],attack:['attack'],jump:['jump'],dodge:['dodge']};
@@ -105,17 +105,19 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
         if(action && (repeatAttack || repeatMotion || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
         active=action;
         if (state==='attack' && attackSlots.includes(action)) action.setEffectiveTimeScale(resolved.attack.duration/(combat.attackDuration || .52));
-        if(action&&MOTION_STATES.includes(state)){
-          const duration=state==='land'?LAND_DURATION:combat?.dodgeDuration||DODGE_DURATION;
-          action.setEffectiveTimeScale(resolved[state].duration/duration);
-          action.time=Math.min(resolved[state].duration,Math.max(0,state==='land'?LAND_DURATION-combat.landingTime:(combat.dodgePhase||0)*duration)*action.timeScale);
-        }
+      }
+      if(action&&MOTION_STATES.includes(state)){
+        const phase=state==='land'?1-combat.landingTime/LAND_DURATION:combat.dodgePhase||0;
+        // Combat already advanced this frame. Drive the clip from its phase,
+        // rather than advancing it a second time or drifting at variable FPS.
+        action.setEffectiveTimeScale(0);
+        action.time=THREE.MathUtils.clamp(phase,0,1)*resolved[state].duration;
       }
       fadeTime=Math.min(fadeLength,fadeTime+Math.max(0,dt));
       const blend=fadeTime/fadeLength;
       for(const [key,a] of Object.entries(slots)){
         a.setEffectiveWeight((startWeights[key]||0)*(1-blend)+(a===active?blend:0));
-        if(blend===1&&a!==active&&a.isRunning())a.stop();
+        if(blend===1&&a!==active&&a.isScheduled())a.stop();
       }
       if(action===actions.walk)action.setEffectiveTimeScale(THREE.MathUtils.clamp(motor.speed/(options.walkReferenceSpeed||4.1),.55,1.35));
       if(action===actions.run)action.setEffectiveTimeScale(THREE.MathUtils.clamp(motor.speed/(options.runReferenceSpeed||8),.55,1.35));

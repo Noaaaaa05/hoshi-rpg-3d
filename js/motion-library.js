@@ -37,6 +37,7 @@ export function prepareMotion(root,clips,entry,state) {
   if(!MOTION_STATES.includes(state))throw new Error('未対応のモーションです');
   const source=entry.clip?clips.find(c=>c.name===entry.clip):clips.length===1?clips[0]:null;
   if(!source)throw new Error('クリップを一意に選択できません');
+  if(source.tracks.some(t=>t.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline))throw new Error('Cubic splineモーションはLINEARへベイクしてから登録してください');
   if(entry.range!==undefined&&entry.range!==null&&(!Array.isArray(entry.range)||entry.range.length!==2||!entry.range.every(Number.isFinite)||entry.range[0]<0||entry.range[1]>source.duration||entry.range[1]<=entry.range[0]))throw new Error('モーションの区間が不正です');
   const clip=trimClip(source,entry.range);
   if(!Number.isFinite(clip.duration)||clip.duration<=0||clip.duration>10)throw new Error('モーションの長さが不正です');
@@ -73,7 +74,13 @@ export async function loadMotionLibrary(base,entries,loader,manifestURL,onWarnin
       if(url.origin!==directory.origin||!url.pathname.startsWith(directory.pathname)||!url.pathname.endsWith('.glb'))throw new Error('Motion must be a local GLB');
       timer=setTimeout(()=>controller.abort(),12000);
       const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw new Error(`HTTP ${response.status}`);
-      const bytes=await response.arrayBuffer();if(bytes.byteLength>2*1024*1024)throw new Error('Animation pack exceeds 2 MiB');
+      const limit=2*1024*1024;
+      if(Number(response.headers.get('content-length'))>limit)throw new Error('Animation pack exceeds 2 MiB');
+      const reader=response.body.getReader(),parts=[];let length=0;
+      try{while(true){const {value,done}=await reader.read();if(done)break;length+=value.byteLength;if(length>limit)throw new Error('Animation pack exceeds 2 MiB');parts.push(value);}}
+      finally{await reader.cancel().catch(()=>{});}
+      const joined=new Uint8Array(length);let offset=0;for(const part of parts){joined.set(part,offset);offset+=part.byteLength;}
+      const bytes=joined.buffer;
       if(!/^[a-f0-9]{64}$/.test(entry.sha256||''))throw new Error('Missing motion checksum');
       const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
       if(digest!==entry.sha256)throw new Error('Motion checksum mismatch');

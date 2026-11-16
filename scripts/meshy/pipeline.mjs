@@ -109,7 +109,7 @@ export async function runPipeline({root=process.cwd(),config,options={},apiKey='
   const entries={},validated=[];
   for(const target of plan.targets){
     const spec=config.motions[target];
-    const motion=await task(`${target}:motion`,'/text-to-motion',{prompt:spec.prompt,mode:plan.mode,duration:spec.duration},config.credits[plan.mode]);
+    await task(`${target}:motion`,'/text-to-motion',{prompt:spec.prompt,mode:plan.mode,duration:spec.duration},config.credits[plan.mode]);
     const animation=await task(`${target}:animation`,'/animations',{rig_task_id:plan.rigTaskId,motion_task_id:state.tasks[`${target}:motion`].id},config.credits.animation);
     const bytes=await client.download(animation.result?.animation_glb_url);
     await writeFile(path.join(out,`${target}-source.glb`),bytes);

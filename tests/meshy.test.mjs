@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile,writeFile,mkdir,mkdtemp,cp,rm } from 'node:fs/promises';
+import { readFile,mkdir,mkdtemp,cp,rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { planGeneration,runPipeline,createClient } from '../scripts/meshy/pipeline.mjs';
 import { loadGLB,readGLB,writeGLB,animationPack,validateMotion } from '../scripts/meshy/glb.mjs';
 import { rigProfile,assertCompatibleRig,prepareMotion } from '../js/motion-library.js';
 import { MOTION_STATES,selectDodge } from '../js/motion-state.js';
-import { createPlayerAnimator,prepareModel,createFootGrounding } from '../js/model-utils.js';
+import { createPlayerAnimator } from '../js/model-utils.js';
 import { PlayerMotor,CollisionGrid } from '../js/physics.js';
 import { CombatSystem } from '../js/combat.js';
 
@@ -143,6 +143,9 @@ test('new one-shot states blend into current locomotion instead of forcing idle'
     animator.update(.016,motor,combat);assert.equal(animator.state,state);
     for(let i=0;i<10;i++){animator.update(.016,motor,combat);assert.ok(Math.abs(Object.values(animator.getStatus().weights).reduce((a,b)=>a+b,0)-1)<.0001);}
   }
+  combat.dodging=true;combat.dodgeType='roll';combat.dodgePhase=.5;
+  animator.update(.033,motor,combat);assert.ok(Math.abs(animator.getStatus().time-.25)<.00001);
+  combat.dodging=false;
   motor.speed=4.1;combat.landingTime=0;animator.update(.016,motor,combat);assert.equal(animator.state,'walk');
   const paused=animator.getStatus().mixerTime;animator.update(0,motor,combat);assert.equal(animator.getStatus().mixerTime,paused);
 });
