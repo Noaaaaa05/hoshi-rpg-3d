@@ -113,10 +113,10 @@ npm run assets:plan -- /private/hoshi-batch --review /private/asset-review.json 
 公開リポジトリの **Asset models (explicit approval)** で使う場合は、公開も許可された素材だけを `production/approved/<bundle>/` に用意します。以下を含めます。**未確認の添付素材をここへ移さないでください。**
 
 - `catalog.json` と対象の `crops/*.png`。
-- `review.json`：各対象のPNGハッシュ、目視確認、許諾根拠、確認者、`allow_3d: true`、`allow_publication: true`。
+- `review.json`：各対象のPNGハッシュ、目視確認、許諾根拠、確認者、`allow_3d: true`、`allow_publication: true`、`allow_source_publication: true`。
 - `approval.json`：承認した計画のハッシュ・対象ID・操作・件数・上限・固有の承認ID。
 
-公開Artifactsを使う計画は `assets:plan` に `--publication true` を指定して作ります。承認JSONの形式は次のとおりです。値は確認済みplanから転記し、別途所有者の承認を得ます。
+公開リポジトリの入力とArtifactsを使う計画は `assets:plan` に `--publication true --source-publication true` を指定して作ります。加工後モデルの公開許可と、元の切り抜きPNGの再配布許可は別です。原画の再配布を認めないライセンスの素材は、この公開入力フォルダへコピーせず、非公開の制作環境を使ってください。モデルだけを登録する `assets:register` は元PNGを公開しないため、原画の再配布許可を要求しません。承認JSONの形式は次のとおりです。値は確認済みplanから転記し、別途所有者の承認を得ます。
 
 ```json
 {

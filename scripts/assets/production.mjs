@@ -22,7 +22,7 @@ export function validateBatch(catalog){
   return catalog;
 }
 
-export function assess(asset,review={},source,publication=false){
+export function assess(asset,review={},source,publication=false,sourcePublication=false){
   const record=review.assets?.[asset.id],issues=[];
   if(!record||record.png_sha256!==asset.png_sha256)issues.push('review_missing_or_stale');
   if(record?.bbox&&JSON.stringify(record.bbox)!==JSON.stringify(asset.bbox))issues.push('crop_correction_not_rendered');
@@ -31,6 +31,7 @@ export function assess(asset,review={},source,publication=false){
   const rights=record?.rights;
   if(rights?.status!=='cleared'||typeof rights.evidence!=='string'||!rights.evidence.trim()||typeof rights.reviewer!=='string'||!rights.reviewer.trim()||rights.allow_3d!==true)issues.push('rights_or_3d_permission_missing');
   if(publication&&rights?.allow_publication!==true)issues.push('publication_permission_missing');
+  if(sourcePublication&&rights?.allow_source_publication!==true)issues.push('source_redistribution_permission_missing');
   const category=record?.category||asset.category;
   if(!TYPES.includes(category))issues.push('invalid_category');
   if(['magic','unknown'].includes(category))issues.push(category==='magic'?'use_2d_or_particles':'classification_required');
@@ -38,7 +39,7 @@ export function assess(asset,review={},source,publication=false){
   return {category,name:record?.name||asset.name,issues,ready:issues.length===0};
 }
 
-export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publication=false}={}){
+export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publication=false,sourcePublication=false}={}){
   validateBatch(catalog);
   if(!Number.isInteger(limit)||limit<10||limit>20)throw new Error('Pilot selection must contain at most 10–20 proposed assets');
   if(!Number.isInteger(offset)||offset<0||offset>10000)throw new Error('Invalid batch offset');
@@ -61,7 +62,7 @@ export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publ
   }
   const selected=assetIds?assetIds.map(id=>catalog.assets.find(a=>a.id===id)):ordered.slice(offset,offset+limit);
   const entries=selected.map(asset=>{
-    const assessment=assess(asset,review,sources.get(asset.source_id),publication),type=assessment.category;
+    const assessment=assess(asset,review,sources.get(asset.source_id),publication,sourcePublication),type=assessment.category;
     return {id:asset.id,png_sha256:asset.png_sha256,...assessment,
       stages:[{type:'image-to-3d',status:assessment.ready?'awaiting_paid_approval':'blocked',credits:PRICING.imageTo3D},
         {type:'mobile-budget-validation',status:'waiting'},
@@ -74,7 +75,7 @@ export function makePlan(catalog,review={},{limit=16,offset=0,assetIds=null,publ
     proposedCount:entries.length,readyCount:entries.filter(e=>e.ready).length,estimatedCreditsIfAllApproved:entries.length*PRICING.imageTo3D,
     payableCredits:entries.filter(e=>e.ready).length*PRICING.imageTo3D,
     effectRoute:{count:catalog.assets.filter(a=>a.category==='magic').length,method:'Review licensed PNGs for sprite atlas / THREE.Sprite / additive particles; do not default to 3D generation.'},
-    networkRequests:0,paidApproved:false,publication};
+    networkRequests:0,paidApproved:false,publication,sourcePublication};
   return {...plan,sha256:hash(JSON.stringify(plan))};
 }
 
@@ -89,9 +90,9 @@ export async function localAsset(batch,asset){
 }
 async function persist(file,value){await writeFile(file+'.tmp',JSON.stringify(value,null,2)+'\n');await rename(file+'.tmp',file);}
 
-export async function generateModels({catalog,review,plan,batch,output,approval,client,beforeCharge,apiKey,resume,publication=false}={}){
+export async function generateModels({catalog,review,plan,batch,output,approval,client,beforeCharge,apiKey,resume,publication=false,sourcePublication=false}={}){
   if(!client&&(!apiKey||typeof apiKey!=='string'))throw new Error('API key is unavailable');
-  const recomputed=makePlan(catalog,review,{...plan.selection,publication});
+  const recomputed=makePlan(catalog,review,{...plan.selection,publication,sourcePublication});
   if(!isDeepStrictEqual(recomputed,plan))throw new Error('Plan changed after review');
   const ready=plan.entries.filter(e=>e.ready);
   if(!ready.length)throw new Error('No rights-cleared and quality-approved assets');

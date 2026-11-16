@@ -49,6 +49,7 @@ test('pilot selects 16 diverse candidates but unknown rights remain quarantined,
 test('magic uses a 2D route; watermarks, stale reviews, corrections and unlicensed publication cannot pass',async t=>{
   const {catalog,review}=await fixture(t,{clear:true}),a=catalog.assets[0],source=catalog.sources[0];
   assert.equal(assess(a,review,source,true).ready,true);
+  assert.ok(assess(a,review,source,true,true).issues.includes('source_redistribution_permission_missing'));
   assert.ok(assess(a,review,{...source,watermark:true}).issues.includes('watermark_blocked'));
   review.assets[a.id].png_sha256='0'.repeat(64);assert.equal(assess(a,review,source).ready,false);review.assets[a.id].png_sha256=a.png_sha256;
   review.assets[a.id].bbox=[1,0,64,64];assert.ok(assess(a,review,source).issues.includes('crop_correction_not_rendered'));review.assets[a.id].bbox=a.bbox;
