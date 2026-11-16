@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+const configured=JSON.parse(await readFile('assets/models/manifest.json','utf8'));
 
 test('rigged hero is correctly grounded and faces away from the following camera',async({page},testInfo)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -7,7 +9,8 @@ test('rigged hero is correctly grounded and faces away from the following camera
   const state=await page.evaluate(()=>window.__HOSHI_DEBUG__),model=state.playerModel;
   expect(model.loaded).toBe(true);expect(model.mode).toBe('animated');expect(model.proceduralVisible).toBe(false);expect(model.modelVisible).toBe(true);
   expect(model.bones).toBe(66);expect(model.skinnedMeshes).toBe(1);expect(model.clips.sort()).toEqual(['Attack','Idle_03','Running','Walking']);
-  expect(model.states).toEqual({idle:'Idle_03',walk:'Walking',run:'Running',attack:'Attack'});expect(model.weapon.attached).toBe(true);
+  expect(model.states).toMatchObject({idle:'Idle_03',walk:'Walking',run:'Running',attack:'Attack'});expect(model.weapon.attached).toBe(true);
+  expect(model.motionStates.sort()).toEqual(Object.keys(configured.player.motionLibrary||{}).sort());expect(model.rejectedMotions).toEqual([]);
   expect(model.height).toBeCloseTo(1.9,5);expect(model.minY).toBeCloseTo(0,5);expect(model.worldFootY).toBeCloseTo(state.player.y,5);
   expect(model.triangles).toBeLessThanOrEqual(15000);expect(model.meshes).toBe(1);expect(model.rotationY).toBe(0);
   const towardCamera={x:state.camera.x-state.player.x,z:state.camera.z-state.player.z};

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "baseModel": "assets/models/hero_animated.glb",
+  "manifest": "assets/models/manifest.json",
+  "hardCreditLimit": 100,
+  "pricingReviewed": "2026-11-16",
+  "credits": { "swift": 3, "prime": 10, "animation": 3 },
+  "maxTimeScale": 2.5,
+  "motions": {
+    "roll": {
+      "prompt": "A biped swordsman performs one compact forward somersault dodge roll, then recovers to a balanced standing guard. Keep the sword hand closed. One action only, no walking, no camera motion.",
+      "duration": 2,
+      "clip": null,
+      "range": null
+    },
+    "dodgeLeft": {
+      "prompt": "A biped swordsman performs one quick short sidestep dodge to the character's left while facing forward, then returns to a stable standing guard. One action only, no turning, no camera motion.",
+      "duration": 2,
+      "clip": null,
+      "range": null
+    },
+    "dodgeRight": {
+      "prompt": "A biped swordsman performs one quick short sidestep dodge to the character's right while facing forward, then returns to a stable standing guard. One action only, no turning, no camera motion.",
+      "duration": 2,
+      "clip": null,
+      "range": null
+    },
+    "dodgeBack": {
+      "prompt": "A biped swordsman performs one short backward dodge step while facing forward, then recovers to a stable standing guard. One action only, no turning, no camera motion.",
+      "duration": 2,
+      "clip": null,
+      "range": null
+    },
+    "land": {
+      "prompt": "A biped swordsman lands from a small jump, bends the knees to absorb impact, then returns to a relaxed standing guard. One landing only, no takeoff, no horizontal travel, no camera motion.",
+      "duration": 2,
+      "clip": null,
+      "range": null
+    }
+  }
+}

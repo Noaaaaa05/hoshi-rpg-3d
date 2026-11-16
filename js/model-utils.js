@@ -1,5 +1,6 @@
 // This relative import also makes model transforms/animation testable in Node.
 import * as THREE from '../vendor/three/three.module.js';
+import { MOTION_STATES, DODGE_DURATION, LAND_DURATION } from './motion-state.js';
 
 export const PLAYER_STATES = ['idle', 'walk', 'run', 'attack', 'jump', 'dodge'];
 const ALIASES = {idle:['idle'],walk:['walk','walking'],run:['run','running'],attack:['attack'],jump:['jump'],dodge:['dodge']};
@@ -43,7 +44,7 @@ export function prepareModel(gltf, spec = {}) {
     minY:fitted.min.y,rotationY,scale,clips:(gltf.animations||[]).map(clip=>clip.name)}};
 }
 
-function trimClip(clip,range) {
+export function trimClip(clip,range) {
   if(!Array.isArray(range)||range.length!==2)return clip.clone().optimize();
   const start=Math.max(0,range[0]),end=Math.min(clip.duration,range[1]);
   if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw new Error('アニメーション範囲が不正です');
@@ -59,8 +60,8 @@ function trimClip(clip,range) {
 export function createPlayerAnimator(root, clips = [], mapping = {}, options = {}) {
   mapping = mapping && typeof mapping === 'object' ? mapping : {};
   const resolved = {};
-  for (const state of PLAYER_STATES) {
-    const names = typeof mapping[state] === 'string' ? [mapping[state]] : ALIASES[state];
+  for (const state of [...PLAYER_STATES,...MOTION_STATES]) {
+    const names = typeof mapping[state] === 'string' ? [mapping[state]] : ALIASES[state]||[state];
     const clip = clips.find(clip=>names.some(name=>key(clip.name)===key(name)));
     if (clip) resolved[state]=trimClip(clip,state==='attack'?options.attackRange:null);
   }
@@ -70,7 +71,7 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
   for (const [state,clip] of Object.entries(resolved)) {
     actions[state]=mixer.clipAction(clip);
     actions[state].setEffectiveWeight(0);
-    if (['attack','jump','dodge'].includes(state)) {actions[state].setLoop(THREE.LoopOnce,1);actions[state].clampWhenFinished=true;}
+    if (['attack','jump','dodge',...MOTION_STATES].includes(state)) {actions[state].setLoop(THREE.LoopOnce,1);actions[state].clampWhenFinished=true;}
   }
   const slots={...actions};
   if(resolved.attack){
@@ -79,7 +80,7 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
   }
   const attackSlots=[actions.attack,slots.attackAlternate].filter(Boolean);
   const fade=Number.isFinite(options.fadeDuration)?Math.max(.01,options.fadeDuration):.16;
-  let active=null,state=null,previousAttackPhase=0,fadeTime=fade,fadeLength=fade,startWeights={};
+  let active=null,state=null,previousAttackPhase=0,previousSerial=null,fadeTime=fade,fadeLength=fade,startWeights={};
   return {
     get state() { return state; },
     clips:Object.fromEntries(Object.entries(resolved).map(([state,clip])=>[state,clip.name])),
@@ -88,19 +89,27 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
       durations:Object.fromEntries(Object.entries(resolved).map(([key,clip])=>[key,clip.duration]))}; },
     update(dt,motor,combat) {
       const movement=motor.speed>.2?(motor.dashing?'run':'walk'):'idle';
-      state=combat?.dodging?'dodge':combat?.attacking?'attack':!motor.grounded?'jump':movement;
+      state=combat?.dodging?(actions[combat.dodgeType]?combat.dodgeType:'dodge'):combat?.attacking?'attack':!motor.grounded?'jump':
+        combat?.landingTime>0&&motor.speed<.2&&actions.land?'land':movement;
       let action=actions[state] || (state==='run'?actions.walk:null) || actions.idle || null;
       const repeatAttack=state==='attack' && actions.attack && attackSlots.includes(active) && combat.attackPhase<previousAttackPhase;
+      const serial=MOTION_STATES.includes(state)?`${state}:${state==='land'?combat?.landingSerial:combat?.dodgeSerial}`:null;
+      const repeatMotion=serial!==null&&serial!==previousSerial;
       if(state==='attack'&&actions.attack&&attackSlots.includes(active))action=repeatAttack?attackSlots.find(a=>a!==active):active;
-      if (action!==active || repeatAttack) {
+      if (action!==active || repeatAttack || repeatMotion) {
         const initial=!active;
         if(action!==active){
           startWeights=Object.fromEntries(Object.entries(slots).map(([key,a])=>[key,a.getEffectiveWeight()]));
           fadeLength=repeatAttack?Math.min(.08,fade):fade;fadeTime=initial?fadeLength:0;
         }
-        if(action && (repeatAttack || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
+        if(action && (repeatAttack || repeatMotion || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
         active=action;
         if (state==='attack' && attackSlots.includes(action)) action.setEffectiveTimeScale(resolved.attack.duration/(combat.attackDuration || .52));
+        if(action&&MOTION_STATES.includes(state)){
+          const duration=state==='land'?LAND_DURATION:combat?.dodgeDuration||DODGE_DURATION;
+          action.setEffectiveTimeScale(resolved[state].duration/duration);
+          action.time=Math.min(resolved[state].duration,Math.max(0,state==='land'?LAND_DURATION-combat.landingTime:(combat.dodgePhase||0)*duration)*action.timeScale);
+        }
       }
       fadeTime=Math.min(fadeLength,fadeTime+Math.max(0,dt));
       const blend=fadeTime/fadeLength;
@@ -111,6 +120,7 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
       if(action===actions.walk)action.setEffectiveTimeScale(THREE.MathUtils.clamp(motor.speed/(options.walkReferenceSpeed||4.1),.55,1.35));
       if(action===actions.run)action.setEffectiveTimeScale(THREE.MathUtils.clamp(motor.speed/(options.runReferenceSpeed||8),.55,1.35));
       previousAttackPhase=state==='attack'?combat.attackPhase:0;
+      previousSerial=serial;
       mixer.update(Math.max(0,dt));
     }
   };
@@ -119,19 +129,28 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
 // Sample only a few sole vertices, not the whole animated mesh each frame.
 // Correcting the parent height preserves the authored bone motion and leaves
 // world movement, jump height and the gameplay collider under the motor's control.
-export function createFootGrounding(wrapper,footOffset=0) {
+export function createFootGrounding(wrapper,footOffset=0,bodySupport=false) {
   wrapper.updateMatrixWorld(true);
   const inverse=new THREE.Matrix4().copy(wrapper.matrixWorld).invert(),relative=new THREE.Matrix4(),point=new THREE.Vector3();
   const meshes=[];
   wrapper.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
     const positions=mesh.geometry.attributes.position,skin=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
-    const candidates=[];let minY=Infinity,maxY=-Infinity;
+    const candidates=[],bodyByBone=new Map();let minY=Infinity,maxY=-Infinity;
     relative.multiplyMatrices(inverse,mesh.matrixWorld);
     for(let i=0;i<positions.count;i++){
       mesh.getVertexPosition(i,point).applyMatrix4(relative);minY=Math.min(minY,point.y);maxY=Math.max(maxY,point.y);
       const footWeight=[0,1,2,3].reduce((sum,k)=>sum+(/foot|toebase/i.test(mesh.skeleton.bones[skin.getComponent(i,k)]?.name||'')?weights.getComponent(i,k):0),0);
       if(footWeight>.35)candidates.push({index:i,x:point.x,y:point.y,z:point.z});
+      if(bodySupport){
+        let strongest=0;for(let k=1;k<4;k++)if(weights.getComponent(i,k)>weights.getComponent(i,strongest))strongest=k;
+        const bone=skin.getComponent(i,strongest),extremes=bodyByBone.get(bone)||[];
+        for(let axis=0;axis<3;axis++)for(let side=0;side<2;side++){
+          const slot=axis*2+side,value=point.getComponent(axis)*(side?1:-1);
+          if(!extremes[slot]||value<extremes[slot].value)extremes[slot]={index:i,value};
+        }
+        bodyByBone.set(bone,extremes);
+      }
     }
     const band=candidates.filter(v=>v.y<minY+(maxY-minY)*.035),samples=new Set();
     // The uploaded mesh has about 220 sole vertices: evaluate them exactly.
@@ -143,20 +162,21 @@ export function createFootGrounding(wrapper,footOffset=0) {
       for(let i=0;i<Math.min(128,foot.length)&&selected.size<128;i++)selected.add(foot[Math.floor(i*foot.length/Math.min(128,foot.length))].index);
       for(const index of selected)samples.add(index);
     }
-    if(samples.size)meshes.push({mesh,indices:[...samples]});
+    const bodyIndices=[...new Set([...bodyByBone.values()].flat().map(v=>v.index))].slice(0,512);
+    if(samples.size)meshes.push({mesh,indices:[...samples],bodyIndices});
   });
   if(!meshes.length)return null;
   const fit=wrapper.children[0];let minFootY=0,lastCorrection=0;
   return {
     getStatus(){return {minFootY,lastCorrection,samples:meshes.reduce((n,m)=>n+m.indices.length,0)};},
-    update(){
+    update(state){
       wrapper.parent?.updateWorldMatrix(true,false);
       // SkinnedMesh.updateMatrixWorld refreshes its bindMatrixInverse; calling
       // only Object3D.updateWorldMatrix would count the actor translation twice.
       wrapper.updateMatrixWorld(true);inverse.copy(wrapper.matrixWorld).invert();minFootY=Infinity;
-      for(const {mesh,indices} of meshes){
+      for(const {mesh,indices,bodyIndices} of meshes){
         relative.multiplyMatrices(inverse,mesh.matrixWorld);
-        for(const index of indices){mesh.getVertexPosition(index,point).applyMatrix4(relative);minFootY=Math.min(minFootY,point.y);}
+        for(const index of state==='roll'&&bodyIndices.length?bodyIndices:indices){mesh.getVertexPosition(index,point).applyMatrix4(relative);minFootY=Math.min(minFootY,point.y);}
       }
       if(!Number.isFinite(minFootY))return;
       lastCorrection=footOffset-minFootY;fit.position.y+=lastCorrection;minFootY+=lastCorrection;

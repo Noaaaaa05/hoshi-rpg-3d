@@ -1,0 +1,140 @@
+name: Meshy motions
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run = no Meshy requests or charges'
+        type: choice
+        options: [dry-run, generate]
+        default: dry-run
+      targets:
+        description: 'Comma-separated motion names'
+        type: string
+        default: 'roll,dodgeLeft,dodgeRight,dodgeBack,land'
+      motion_mode:
+        description: 'Text to Motion quality/cost'
+        type: choice
+        options: [swift, prime]
+        default: swift
+      max_credits:
+        description: 'Per-run credit reservation limit (0 blocks generation)'
+        type: string
+        default: '0'
+      rig_task_id:
+        description: 'Successful API Rigging ID; empty uses MESHY_RIG_TASK_ID variable'
+        type: string
+        default: ''
+      confirm_paid:
+        description: 'I authorize paid Meshy requests within the selected limit'
+        type: boolean
+        default: false
+      resume_run_id:
+        description: 'Optional previous run ID to resume saved tasks without recreating them'
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: meshy-hero-motions
+  cancel-in-progress: false
+jobs:
+  dry-run:
+    if: inputs.mode == 'dry-run'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Plan without accessing Meshy
+        run: npm run meshy:dry-run
+        env:
+          MESHY_TARGETS: ${{ inputs.targets }}
+          MESHY_MOTION_MODE: ${{ inputs.motion_mode }}
+          MESHY_MAX_CREDITS: ${{ inputs.max_credits }}
+          MESHY_RIG_TASK_ID: ${{ inputs.rig_task_id || vars.MESHY_RIG_TASK_ID }}
+      - run: npm run check && npm test
+      - name: Summarize plan
+        run: node scripts/meshy/summary.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meshy-report
+          path: work/meshy/
+          retention-days: 14
+  generate:
+    if: inputs.mode == 'generate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Require explicit paid consent
+        env:
+          CONFIRM_PAID: ${{ inputs.confirm_paid }}
+        run: test "$CONFIRM_PAID" = 'true'
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_run_id != ''
+        with:
+          name: meshy-report
+          path: work/meshy-resume
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ github.token }}
+      - name: Generate, check rig and stage validated animation-only GLBs
+        run: npm run meshy:generate
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          MESHY_ALLOW_PAID: 'YES'
+          MESHY_TARGETS: ${{ inputs.targets }}
+          MESHY_MOTION_MODE: ${{ inputs.motion_mode }}
+          MESHY_MAX_CREDITS: ${{ inputs.max_credits }}
+          MESHY_RIG_TASK_ID: ${{ inputs.rig_task_id || vars.MESHY_RIG_TASK_ID }}
+          MESHY_RESUME_STATE: ${{ inputs.resume_run_id != '' && 'work/meshy-resume/state.json' || '' }}
+      - run: npm run check && npm test
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:browser
+      - name: Commit tested results to a review branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git switch -c "meshy/motions-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/models/motions assets/models/manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add validated Meshy hero motions'
+          git push origin HEAD
+          node scripts/meshy/pr-body.mjs > work/meshy/pr-body.md
+          if ! gh pr create --base main --title 'Add validated Meshy hero motions' --body-file work/meshy/pr-body.md; then
+            echo 'The tested branch was pushed. Enable Actions pull request creation, or open a PR from this branch.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Summarize execution
+        if: always()
+        run: node scripts/meshy/summary.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meshy-report
+          path: work/meshy/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meshy-browser-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

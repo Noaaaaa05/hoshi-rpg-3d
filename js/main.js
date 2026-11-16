@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
-import { createPlayer } from './player.js?v=0.2.2';
+import { createPlayer } from './player.js?v=0.2.3';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
-import { loadModels } from './models.js?v=0.2.2';
+import { loadModels } from './models.js?v=0.2.3';
 import { loadSave, writeSave } from './storage.js?v=0.2.0';
-import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.0';
+import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.3';
 import { createMonsters } from './monsters.js?v=0.2.0';
 
 const $=selector=>document.querySelector(selector);
@@ -177,7 +177,7 @@ async function init() {
     playerModel:player.getModelStatus(),
     camera:{yaw,pitch,x:camera.position.x,y:camera.position.y,z:camera.position.z},started,paused,
     stars:[...collected],landmarks:[...discovered],input:{joyId:input.joyId,cameraId:input.cameraId,dashId:input.dashId},
-    combat:{attacking:combat.attacking,attackPhase:combat.attackPhase,dodging:combat.dodging,dodgeCooldown:combat.dodgeCooldown,kills:combat.progression.kills,time:combat.time},
+    combat:{attacking:combat.attacking,attackPhase:combat.attackPhase,dodging:combat.dodging,dodgeCooldown:combat.dodgeCooldown,dodgeType:combat.dodgeType,dodgePhase:combat.dodgePhase,dodgeSerial:combat.dodgeSerial,landingTime:combat.landingTime,landingSerial:combat.landingSerial,kills:combat.progression.kills,time:combat.time},
     combatPointers:{attackId:input.attackId,dodgeId:input.dodgeId},
     enemies:combat.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,z:e.z,hp:e.hp,maxHP:e.maxHP,state:e.state,stateTime:e.stateTime,modelLoaded:e.modelLoaded})),
     drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio,colliders:world.grid.items.length

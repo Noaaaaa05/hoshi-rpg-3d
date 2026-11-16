@@ -1,5 +1,6 @@
 // Combat is independent of Three.js. The v0.1 movement solver remains unchanged.
 import { cameraMovement, clamp, heightAt, SPAWN } from './physics.js';
+import { selectDodge, DODGE_DURATION, LAND_DURATION } from './motion-state.js';
 
 export const ENEMY_TYPES = Object.freeze({
   slime: { name:'森のスライム', hp:34, damage:8, xp:18, speed:1.65, radius:.55, range:1.55, windup:.65, recovery:1.05 },
@@ -38,6 +39,7 @@ export class CombatSystem {
     motor.hp=this.progression.maxHP;
     this.events=[];this.attackTime=0;this.attackDuration=.52;this.attackHits=new Set();
     this.dodgeTime=0;this.dodgeCooldown=0;this.invulnerable=0;this.hurtTime=0;this.aiTime=0;this.time=0;this.targetId=null;
+    this.dodgeDuration=DODGE_DURATION;this.dodgeType='roll';this.dodgeSerial=0;this.landingTime=0;this.landingSerial=0;
     this.enemies=spawns.map((spawn,id)=>{
       const config=ENEMY_TYPES[spawn.type],p=grid.resolve(spawn.x,spawn.z,config.radius);
       return {id,type:spawn.type,...p,y:heightAt(p.x,p.z),homeX:p.x,homeZ:p.z,angle:Math.PI,
@@ -48,9 +50,10 @@ export class CombatSystem {
   get attacking() { return this.attackTime>0; }
   get dodging() { return this.dodgeTime>0; }
   get attackPhase() { return this.attacking?1-this.attackTime/this.attackDuration:0; }
+  get dodgePhase() { return this.dodging?1-this.dodgeTime/this.dodgeDuration:0; }
   safe(x,z) { return Math.hypot(x-SPAWN.x,z-SPAWN.z)<8; }
   resetPlayer() {
-    this.attackTime=this.dodgeTime=this.dodgeCooldown=this.hurtTime=0;this.invulnerable=2;this.attackHits.clear();
+    this.attackTime=this.dodgeTime=this.dodgeCooldown=this.hurtTime=this.landingTime=0;this.invulnerable=2;this.attackHits.clear();
     this.motor.vx=this.motor.vz=0;
     for(const e of this.enemies)if(e.hp>0){e.state='return';e.stateTime=0;}
   }
@@ -58,21 +61,25 @@ export class CombatSystem {
     dt=clamp(dt,0,1/30);this.time+=dt;
     this.invulnerable=Math.max(0,this.invulnerable-dt);this.hurtTime=Math.max(0,this.hurtTime-dt);
     this.dodgeCooldown=Math.max(0,this.dodgeCooldown-dt);
+    this.landingTime=Math.max(0,this.landingTime-dt);
     const m=this.motor;
     if(input.dodge&&!this.dodging&&this.dodgeCooldown<=0&&m.grounded&&m.stamina>=22&&m.hp>0){
       const direction=cameraMovement(input.x,input.y,yaw);
+      this.dodgeType=selectDodge(input.x,input.y,yaw,m.angle);this.dodgeFacing=m.angle;this.dodgeSerial++;
       this.dodgeX=direction.magnitude>.1?direction.x/direction.magnitude:Math.sin(m.angle);
       this.dodgeZ=direction.magnitude>.1?direction.z/direction.magnitude:Math.cos(m.angle);
-      this.dodgeTime=.36;this.dodgeCooldown=.8;this.invulnerable=Math.max(this.invulnerable,.34);
+      this.dodgeTime=this.dodgeDuration;this.dodgeCooldown=.8;this.invulnerable=Math.max(this.invulnerable,.34);
       this.attackTime=0;m.stamina-=22;m.regenDelay=.7;this.events.push({type:'dodge'});
     }
     const dodging=this.dodging;
+    const wasGrounded=m.grounded;
     // Normal movement, camera-relative acceleration, jump and dash all use v0.1 rules.
     m.step(dt,dodging?{x:0,y:0,dash:false,jump:false}:input,yaw);
+    if(!wasGrounded&&m.grounded){this.landingTime=LAND_DURATION;this.landingSerial++;}
     if(dodging){
       const travel=10*Math.min(dt,this.dodgeTime),steps=Math.max(1,Math.ceil(travel/.15));
       for(let i=0;i<steps;i++){const p=this.grid.resolve(m.x+this.dodgeX*travel/steps,m.z+this.dodgeZ*travel/steps);m.x=p.x;m.z=p.z;}
-      m.y=heightAt(m.x,m.z);m.angle=Math.atan2(this.dodgeX,this.dodgeZ);m.speed=10;m.vx=m.vz=0;m.regenDelay=.7;
+      m.y=heightAt(m.x,m.z);m.angle=this.dodgeType==='roll'?Math.atan2(this.dodgeX,this.dodgeZ):this.dodgeFacing;m.speed=10;m.vx=m.vz=0;m.regenDelay=.7;
       this.dodgeTime=Math.max(0,this.dodgeTime-dt);
     }
     if((input.attack||input.attackHeld)&&!this.attacking&&!dodging&&m.hp>0){
