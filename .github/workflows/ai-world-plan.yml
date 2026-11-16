@@ -1,0 +1,20 @@
+name: Anime world - safe plan
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate and build world plan without API calls
+        run: node scripts/meshy/world-plan.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anime-world-plan
+          path: work/world/plan.json
+          retention-days: 14
