@@ -96,5 +96,11 @@ class PipelineTests(unittest.TestCase):
         with self.assertRaises(ValueError):extract(archive,out,force=True)
         self.assertEqual((out/'keep.txt').read_text(),'keep')
         with self.assertRaises(ValueError):extract(archive,ROOT/'assets'/'never-publish')
+    def test_weak_connection_between_objects_is_split_and_needs_review(self):
+        image=Image.new('RGB',(240,100),'white');draw=ImageDraw.Draw(image)
+        draw.rectangle((10,10,100,90),fill='red');draw.rectangle((130,10,225,90),fill='blue');draw.line((100,80,130,80),fill='black')
+        catalog,_=extract(self.archive({'sheet.png':image}),self.root/'out',{'sources':{'sheet.png':{'category':'armor','splitSaddles':True}}})
+        self.assertEqual(len(catalog['assets']),2)
+        self.assertTrue(all('split_contact_review' in a['flags'] for a in catalog['assets']))
 
 if __name__=='__main__':unittest.main()

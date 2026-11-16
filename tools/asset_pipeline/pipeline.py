@@ -126,6 +126,34 @@ def component_boxes(mask):
             merged[best] = union_boxes(main, box) + [main[4] + box[4], main[5]+box[5]]
     return [(b[:4],b[5],labels) for b in merged if b[4] >= 25 and b[2] - b[0] >= 3 and b[3] - b[1] >= 3]
 
+def split_saddles(box,members,labels,spec):
+    """Separate weak joins between neighboring objects; never claim semantics."""
+    x1,y1,x2,y2=box
+    height=y2-y1
+    if not spec.get('splitSaddles') or x2-x1<height*spec.get('maxAspect',1.8):
+        return [box]
+    region=np.isin(labels[y1:y2,x1:x2],members)
+    projection=region.sum(axis=0)
+    minimum_width=max(12,round(height*.35))
+    candidates=[]
+    for start,end in runs(projection<=max(1,height*.10)):
+        minimum=int(start+np.argmin(projection[start:end]))
+        if minimum>=minimum_width and region.shape[1]-minimum>=minimum_width:
+            candidates.append(minimum)
+    cuts=[0]
+    for candidate in candidates:
+        if candidate-cuts[-1]>=minimum_width and int(region[:,cuts[-1]:candidate].sum())>=50:
+            cuts.append(candidate)
+    cuts.append(x2-x1)
+    if len(cuts)<3:
+        return [box]
+    parts=[]
+    for left,right in zip(cuts,cuts[1:]):
+        yy,xx=np.where(region[:,left:right])
+        if len(xx)>=25:
+            parts.append([x1+left+int(xx.min()),y1+int(yy.min()),x1+left+int(xx.max())+1,y1+int(yy.max())+1])
+    return parts or [box]
+
 def detections(mask, spec):
     h, w = mask.shape
     if spec.get("method") == "grid":
@@ -166,7 +194,10 @@ def detections(mask, spec):
                 output.append(([x1,y1,x2,y2],"adaptive-row-grid",[row,column],None))
             continue
         for column, (box,members,labels) in enumerate(sorted(component_boxes(mask[y1:y2]), key=lambda b:(b[0][0], b[0][1]))):
-            output.append(([box[0], box[1]+y1, box[2], box[3]+y1], "components+row-hints" if isinstance(rows, list) else "components+gutters", [row, column], (labels,members,int(y1),int(y2))))
+            parts=split_saddles(box,members,labels,spec)
+            for part in parts:
+                method='components+saddle-split' if len(parts)>1 else "components+row-hints" if isinstance(rows, list) else "components+gutters"
+                output.append(([part[0],part[1]+y1,part[2],part[3]+y1],method,[row,column],(labels,members,int(y1),int(y2))))
     return output
 
 def category_for(box, size, spec):
@@ -225,6 +256,8 @@ def process_source(name, data, image, spec, out, corrections=None):
         x1, y1, x2, y2 = map(int, detected)
         occupancy = float(mask[y1:y2, x1:x2].mean())
         flags = ["rights_unknown", "classification_review"]
+        if method=='components+saddle-split':
+            flags.append('split_contact_review')
         if spec.get("watermark") or "watermark" in name.lower():
             flags.append("watermark_present")
         if mode == "preserve":
@@ -256,6 +289,8 @@ def process_source(name, data, image, spec, out, corrections=None):
             category, basis, confidence = correction["category"], "review-correction", .9
         if category not in CATEGORIES:
             raise ValueError("Invalid category")
+        if category in {'character','monster','armor','building'} and width/height>2.2:
+            flags.append('wide_object_review')
         crop = image.crop(box)
         if mode == "black":
             a = np.asarray(crop).copy()
@@ -270,6 +305,9 @@ def process_source(name, data, image, spec, out, corrections=None):
                 selected_mask[:]=False
                 start,end=max(top,box[1]),min(bottom,box[3])
                 selected_mask[start-box[1]:end-box[1]]=np.isin(labels[start-top:end-top,box[0]:box[2]],members)
+                if method=='components+saddle-split':
+                    selected_mask[:,:max(0,x1-box[0])]=False
+                    selected_mask[:,x2-box[0]:]=False
             a[:,:,3] = np.minimum(a[:,:,3], selected_mask.astype(np.uint8)*255)
             crop = Image.fromarray(a)
         png = f"crops/{asset_id}.png"

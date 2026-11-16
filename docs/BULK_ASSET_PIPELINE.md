@@ -54,6 +54,7 @@ iPhoneからは、この会話へZIPと修正指示を渡してクラウド側�
 - `low_resolution`：長辺96px未満・短辺24px未満・面積3,500px未満のいずれか。アップスケールで元の情報量を増やしたことにはしません。
 - `touches_cell_edge` / `touches_source_edge`：物体が境界に触れている可能性。部分欠損・隣の素材の混入を目視確認します。
 - `empty_cell`：格子の空セル。失敗として残します。破損画像はsourceの `decode_failed` に記録し、他の画像は処理します。
+- `split_contact_review`：接触する物体を細い接続部分で分けた候補。切断位置の確認が必要です。`wide_object_review` は横長の物体で、複数の結合か一つの物体かを確認します。
 - `merged_or_scene_review`：大きな領域。複数物体の結合か、島・風景のような一つのシーンかを確認します。
 - `duplicate_exact`：PNGの完全一致。`duplicate_possible`：形状ハッシュと色・縦横比が近い候補。別色やポーズ違いを自動削除しません。
 - `watermark_present`：透かし付き。背景除去・Meshy送信・ゲーム登録を許可しません。許諾を確認した透かしのない原本へ差し替えてください。
@@ -87,7 +88,7 @@ npm run assets:plan -- /private/hoshi-batch --review /private/asset-review.json 
 npm run assets:plan -- /private/hoshi-batch --review /private/asset-review.json --limit 20 --offset 16
 ```
 
-候補は分類の偏りを抑え、低解像度・境界接触を避ける順で選びます。透かし・空・重複候補は自動選択しません。`--ids asset-...,asset-...` で最大20件の明示指定も可能です。候補選定は支出の承認ではありません。初期状態は `readyCount: 0`、API通信0件です。
+最初のモデル候補はNPC・モンスター・武器・防具・建物の5種類を対象に、分類の偏りを抑え、低解像度・境界接触を避ける順で選びます。透かし・空・重複・接触分割・横長や結合の確認候補は自動選択しません。自然素材も台帳に保存し、確認後にIDで明示指定できます。`--ids asset-...,asset-...` で最大20件の明示指定も可能です。候補選定は支出の承認ではありません。初期状態は `readyCount: 0`、API通信0件です。
 
 2026-11-17確認の [公式Image to 3D API](https://docs.meshy.ai/en/api/image-to-3d) を使用します。`meshy-t2.5`、triangle、目標12,000面、2Kテクスチャ、`meshy-n1`、GLB形式。小さな入力画像や背面がない画像からは未確認の形が生成されるため、結果の目視確認を省略しません。目標面数は実際の上限の保証ではなく、登録時に再検査します。
 

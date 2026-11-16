@@ -1,7 +1,7 @@
 'use strict';
 const catalog=JSON.parse(document.querySelector('#catalog').textContent),$=s=>document.querySelector(s);
 const labels={character:'人物',monster:'モンスター',weapon:'武器',armor:'防具',magic:'魔法',building:'建物',nature:'自然',unknown:'未分類'};
-const warnings={low_resolution:'低解像度',duplicate_exact:'完全重複',duplicate_possible:'重複候補',touches_cell_edge:'セル端の欠損候補',touches_source_edge:'原画像端',watermark_present:'透かし・利用停止',empty_cell:'空のセル',merged_or_scene_review:'複数物体／シーン',background_preserved:'背景保持',glow_alpha_review:'発光の透過を確認'};
+const warnings={low_resolution:'低解像度',duplicate_exact:'完全重複',duplicate_possible:'重複候補',touches_cell_edge:'セル端の欠損候補',touches_source_edge:'原画像端',watermark_present:'透かし・利用停止',empty_cell:'空のセル',merged_or_scene_review:'複数物体／シーン',split_contact_review:'接触部分を分割・要確認',wide_object_review:'横長の物体・結合を確認',background_preserved:'背景保持',glow_alpha_review:'発光の透過を確認'};
 let page=0,selected=null,review={version:1,catalog_fingerprint:catalog.fingerprint,assets:{}};
 try{const saved=JSON.parse(localStorage.getItem('hoshi-asset-review:'+catalog.fingerprint));if(saved?.catalog_fingerprint===catalog.fingerprint)review=saved;}catch{}
 for(const id of ['#category','#edit-category'])for(const [value,label] of Object.entries(labels)){const option=document.createElement('option');option.value=value;option.textContent=label;$(id).append(option);}

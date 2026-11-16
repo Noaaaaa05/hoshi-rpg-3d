@@ -3,14 +3,14 @@
   "note": "Layout hints, not licenses or proof of object identity. Every real source needs review.",
   "sources": {
     "01_large_monsters.jpeg": {"category":"monster","rows":[0,121,242,353,464,586,690,781,889,1024]},
-    "02_animals_beastfolk.jpeg": {"category":"monster"},
+    "02_animals_beastfolk.jpeg": {"category":"monster","rows":[0,143,268,382,505,620,736,822,916,1024],"splitSaddles":true,"regions":[[0.5,0,1,1,"character"]]},
     "03_small_monsters.jpeg": {"category":"monster"},
-    "04_human_characters.jpeg": {"category":"character"},
+    "04_human_characters.jpeg": {"category":"character","rows":[0,165,326,484,627,756,891,1024],"splitSaddles":true,"maxAspect":1.25},
     "05_magic_icons_dark.jpeg": {"category":"magic","method":"grid","columns":20,"rows":13,"background":"black"},
     "06_weapons_watermark.jpeg": {"category":"weapon","method":"grid","columns":16,"rows":8,"background":"preserve","watermark":true,"watermarkEvidence":"Visible diagonal watermark confirmed by visual inspection; the uploaded README also flags it."},
     "07_chibi_monsters.jpeg": {"category":"monster"},
-    "08_equipment_world_assets.jpeg": {"category":"unknown","rows":[0,147,227,291,422,519,648,768,865,1024],"regions":[[0,0,1,0.284,"armor"],[0,0.284,1,0.412,"weapon"],[0,0.412,1,0.507,"magic"],[0,0.507,1,0.633,"building"],[0,0.633,1,0.845,"monster"],[0,0.845,1,1,"nature"]]},
-    "09_spells_world_sheets.jpeg": {"category":"unknown","rows":[0,71,137,196,258,319,385,449,547,622,707,812,912,1024],"regions":[[0,0,1,0.438,"magic"],[0,0.438,1,0.69,"building"],[0,0.69,1,1,"nature"]]},
+    "08_equipment_world_assets.jpeg": {"category":"unknown","rows":[0,147,227,291,422,519,648,768,865,1024],"splitSaddles":true,"regions":[[0,0,1,0.284,"armor"],[0,0.284,1,0.412,"weapon"],[0,0.412,1,0.507,"magic"],[0,0.507,1,0.633,"building"],[0,0.633,1,0.845,"monster"],[0,0.845,1,1,"nature"]]},
+    "09_spells_world_sheets.jpeg": {"category":"unknown","rows":[0,71,137,196,258,319,385,449,547,622,707,812,912,1024],"splitSaddles":true,"regions":[[0,0,1,0.438,"magic"],[0,0.438,1,0.69,"building"],[0,0.69,1,1,"nature"]]},
     "10_monster_catalog.jpeg": {"category":"monster","rows":[0,145,217,302,389,451,523,618,701,789,925,1024],"rowColumns":[11,17,20,24,20,17,14,22,22,13,14]}
   }
 }

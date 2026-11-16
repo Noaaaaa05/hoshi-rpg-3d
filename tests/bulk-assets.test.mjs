@@ -26,7 +26,7 @@ async function fixture(t,{clear=false}={}){
   const root=await mkdtemp(path.join(tmpdir(),'hoshi-bulk-'));t.after(()=>rm(root,{recursive:true,force:true}));const batch=path.join(root,'private');await mkdir(path.join(batch,'crops'),{recursive:true});
   const bytes=png(64,64),catalog={version:1,private:true,fingerprint:hash('synthetic-fixture'),sources:[{id:'synthetic',name:'Our own synthetic shapes',watermark:false}],assets:[]},review={version:1,catalog_fingerprint:catalog.fingerprint,assets:{}};
   const types=['character','monster','weapon','armor','building','nature'];
-  for(let n=0;n<18;n++){
+  for(let n=0;n<24;n++){
     const id='asset-'+n.toString(16).padStart(20,'0'),asset={id,name:'Synthetic '+n,source_id:'synthetic',category:types[n%6],bbox:[0,0,64,64],width:64,height:64,png:`crops/${id}.png`,png_sha256:hash(bytes),flags:[],quality:'needs_review'};
     catalog.assets.push(asset);await writeFile(path.join(batch,asset.png),bytes);
     if(clear)review.assets[id]={png_sha256:asset.png_sha256,bbox:asset.bbox,quality:'approved',category:asset.category,rights:{status:'cleared',evidence:'Created by this test suite',reviewer:'test',allow_3d:true,allow_publication:true}};
@@ -40,10 +40,10 @@ function client({fail=false,consumed=15}={}){
 test('pilot selects 16 diverse candidates but unknown rights remain quarantined, with zero network calls',async t=>{
   const {catalog,review}=await fixture(t),before=structuredClone(catalog),plan=makePlan(catalog,review);
   assert.equal(plan.proposedCount,16);assert.equal(plan.readyCount,0);assert.equal(plan.estimatedCreditsIfAllApproved,240);assert.equal(plan.networkRequests,0);
-  assert.equal(new Set(plan.entries.map(e=>e.category)).size,6);assert.deepEqual(catalog,before);
+  assert.equal(new Set(plan.entries.map(e=>e.category)).size,5);assert.deepEqual(catalog,before);
   assert.ok(plan.entries.find(e=>e.category==='monster').stages.some(s=>s.type==='anatomy-review'));
   assert.ok(plan.entries.find(e=>e.category==='character').stages.some(s=>s.type==='rigging'&&s.status==='separate_approval_required'));
-  const next=makePlan(catalog,review,{offset:16});assert.equal(next.proposedCount,2);assert.ok(!next.entries.some(e=>plan.entries.some(p=>p.id===e.id)));
+  const next=makePlan(catalog,review,{offset:16});assert.equal(next.proposedCount,4);assert.ok(!next.entries.some(e=>plan.entries.some(p=>p.id===e.id)));
   assert.throws(()=>makePlan(catalog,review,{limit:21}));assert.throws(()=>makePlan(catalog,{...review,catalog_fingerprint:'0'.repeat(64)}));
 });
 test('magic uses a 2D route; watermarks, stale reviews, corrections and unlicensed publication cannot pass',async t=>{
