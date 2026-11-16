@@ -36,7 +36,13 @@
       ],
       "length": 0.78
     },
-    "motionLibrary": {}
+    "motionLibrary": {
+      "roll": {
+        "url": "./motions/roll-d0b3c225826c.glb",
+        "clip": "Hoshi_roll",
+        "sha256": "d0b3c225826c603aa969e2329b62cc12dd90cd93628072a1c4489ae0d4789e08"
+      }
+    }
   },
   "objects": [],
   "monsters": {

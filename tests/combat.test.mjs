@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { CollisionGrid, PlayerMotor } from '../js/physics.js';
 import { CombatSystem, Progression, ENEMY_TYPES, xpForLevel } from '../js/combat.js';
 import { loadSave, writeSave } from '../js/storage.js';
+import { ROLL_DURATION } from '../js/motion-state.js';
 const controls=(extra={})=>({x:0,y:0,dash:false,jump:false,attack:false,attackHeld:false,dodge:false,...extra});
 function arena(spawns=[{type:'slime',x:20,z:-1.5}],saved) {
   const grid=new CollisionGrid(),motor=new PlayerMotor(grid);motor.reset(20,0);
@@ -61,6 +62,31 @@ test('dodge evades a telegraphed strike, costs stamina and cannot bypass obstacl
   const stamina=motor.stamina;combat.step(1/60,controls({dodge:true}),0);assert.ok(motor.stamina>=stamina);assert.equal(combat.dodging,false);
   motor.stamina=10;advance(combat,1);combat.step(1/60,controls({dodge:true}),0); // recovery can refill; explicit low stamina below
   combat.dodgeTime=0;combat.dodgeCooldown=0;motor.stamina=10;combat.step(1/60,controls({dodge:true}),0);assert.equal(combat.dodging,false);
+});
+test('the animated forward roll tracks a 3.6 m dodge and still resolves obstacles',()=>{
+  const {combat,motor}=arena([]);
+  combat.rollMotionAvailable=true;
+  const start=motor.z;
+  advance(combat,.1,{dodge:true});
+  assert.equal(combat.dodgeDuration,ROLL_DURATION);
+  assert.equal(combat.dodgeType,'roll');assert.equal(motor.stamina,78);
+  assert.ok(start-motor.z>.18&&start-motor.z<.25,'the crouch begins with a small movement');
+  assert.ok(combat.invulnerable>0);
+  advance(combat,.5);
+  assert.ok(Math.abs(start-motor.z-3.6)<.001);
+  assert.equal(combat.invulnerable,0);assert.equal(combat.dodging,true);
+  advance(combat,.15);
+  assert.equal(combat.dodging,false);
+  assert.ok(Math.abs(start-motor.z-3.6)<.001);
+  advance(combat,1/60,{dodge:true});
+  assert.equal(combat.dodgeSerial,1);
+
+  const blocked=arena([]);
+  blocked.combat.rollMotionAvailable=true;
+  blocked.grid.add({x:blocked.motor.x,z:blocked.motor.z-1.3,radius:.45});
+  advance(blocked.combat,.75,{dodge:true});
+  assert.ok(blocked.motor.z>-.85,'the roll stops at a collider');
+  assert.equal(blocked.combat.dodging,false);
 });
 test('the starting clearing is safe, death recovery clears actions, and enemies respawn only out of view',()=>{
   const {combat,motor}=arena([{type:'slime',x:3,z:-7}]);motor.reset();advance(combat,12);assert.equal(motor.hp,100);assert.equal(combat.enemies[0].state,'wander');

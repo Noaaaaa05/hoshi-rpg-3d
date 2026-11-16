@@ -1,6 +1,6 @@
 // This relative import also makes model transforms/animation testable in Node.
 import * as THREE from '../vendor/three/three.module.js';
-import { MOTION_STATES, LAND_DURATION } from './motion-state.js';
+import { MOTION_STATES, LAND_DURATION } from './motion-state.js?v=0.2.6';
 
 export const PLAYER_STATES = ['idle', 'walk', 'run', 'attack', 'jump', 'dodge'];
 const ALIASES = {idle:['idle'],walk:['walk','walking'],run:['run','running'],attack:['attack'],jump:['jump'],dodge:['dodge']};
@@ -100,7 +100,7 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
         const initial=!active;
         if(action!==active){
           startWeights=Object.fromEntries(Object.entries(slots).map(([key,a])=>[key,a.getEffectiveWeight()]));
-          fadeLength=repeatAttack?Math.min(.08,fade):fade;fadeTime=initial?fadeLength:0;
+          fadeLength=repeatAttack||state==='roll'?Math.min(.08,fade):fade;fadeTime=initial?fadeLength:0;
         }
         if(action && (repeatAttack || repeatMotion || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
         active=action;
@@ -135,6 +135,8 @@ export function createFootGrounding(wrapper,footOffset=0,bodySupport=false) {
   wrapper.updateMatrixWorld(true);
   const inverse=new THREE.Matrix4().copy(wrapper.matrixWorld).invert(),relative=new THREE.Matrix4(),point=new THREE.Vector3();
   const meshes=[];
+  // During a roll the lowest vertex can lie along a diagonal of the rest pose.
+  const supportAxes=[[1,0,0],[0,1,0],[0,0,1],[0,1,1],[0,1,-1],[1,0,1],[1,0,-1],[1,1,0],[1,-1,0]];
   wrapper.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
     const positions=mesh.geometry.attributes.position,skin=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
@@ -147,9 +149,10 @@ export function createFootGrounding(wrapper,footOffset=0,bodySupport=false) {
       if(bodySupport){
         let strongest=0;for(let k=1;k<4;k++)if(weights.getComponent(i,k)>weights.getComponent(i,strongest))strongest=k;
         const bone=skin.getComponent(i,strongest),extremes=bodyByBone.get(bone)||[];
-        for(let axis=0;axis<3;axis++)for(let side=0;side<2;side++){
-          const slot=axis*2+side,value=point.getComponent(axis)*(side?1:-1);
-          if(!extremes[slot]||value<extremes[slot].value)extremes[slot]={index:i,value};
+        for(const [axis,[x,y,z]] of supportAxes.entries()){
+          const projection=point.x*x+point.y*y+point.z*z;
+          if(!extremes[axis*2]||projection<extremes[axis*2].value)extremes[axis*2]={index:i,value:projection};
+          if(!extremes[axis*2+1]||projection>extremes[axis*2+1].value)extremes[axis*2+1]={index:i,value:projection};
         }
         bodyByBone.set(bone,extremes);
       }

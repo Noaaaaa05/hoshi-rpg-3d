@@ -5,9 +5,9 @@ import { createPlayer } from './player.js?v=0.2.5';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
-import { loadModels } from './models.js?v=0.2.3';
+import { loadModels } from './models.js?v=0.2.6';
 import { loadSave, writeSave } from './storage.js?v=0.2.0';
-import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.3';
+import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.6';
 import { createMonsters } from './monsters.js?v=0.2.0';
 
 const $=selector=>document.querySelector(selector);
@@ -58,6 +58,7 @@ async function init() {
   let updateModels=()=>{},modelWarning=false;
   try { updateModels=await loadModels(scene,player,world.grid,(...args)=>{console.warn(...args);modelWarning=true;},monsters); }
   catch(error){console.warn('GLB設定を読み込めません。簡易モデルで続行します。',error);modelWarning=true;}
+  combat.rollMotionAvailable=player.getModelStatus().motionStates?.includes('roll')===true;
   if(saved?.position)motor.reset(saved.position.x,saved.position.z);
   let yaw=0,pitch=.31,started=false,paused=true,elapsed=0,last=performance.now(),saveTimer=0,hudTimer=0;
   let toastTimer,discoveryTimer,ready=false,wasComplete=collected.size===8&&discovered.size===3;

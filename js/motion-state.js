@@ -3,6 +3,25 @@ import { cameraMovement } from './physics.js';
 export const MOTION_STATES = ['roll','dodgeLeft','dodgeRight','dodgeBack','land'];
 export const DODGE_DURATION = .36;
 export const LAND_DURATION = .2;
+export const ROLL_DURATION = .72;
+
+export function motionDuration(state) {
+  return state === 'roll' ? ROLL_DURATION : state === 'land' ? LAND_DURATION : DODGE_DURATION;
+}
+
+// The retimed BVH pelvis slows during the crouch, rolls forward, then recovers in place.
+const rollTravel = [[0,0],[.10,.06],[.15,.17],[.27,.54],[.35,.71],[.50,.87],[.60,1]];
+
+export function rollTravelFraction(time) {
+  for(let i=1;i<rollTravel.length;i++){
+    const [end,finish]=rollTravel[i];
+    if(time<=end){
+      const [start,begin]=rollTravel[i-1];
+      return begin+(finish-begin)*(Math.max(time,start)-start)/(end-start);
+    }
+  }
+  return 1;
+}
 
 // Resolve the stick in world space, then compare with the facing at button-down.
 export function selectDodge(x,y,yaw,facing) {
