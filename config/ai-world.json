@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "style": {
+    "name": "original-anime-fantasy",
+    "palette": [
+      "navy",
+      "gold",
+      "forest-green",
+      "warm-stone"
+    ],
+    "visual_rules": [
+      "stylized hand-painted textures",
+      "readable silhouettes",
+      "consistent scale",
+      "mobile-friendly low-to-mid poly"
+    ]
+  },
+  "zones": [
+    {
+      "id": "starter-town",
+      "name": "星灯りの街",
+      "terrain": "village",
+      "structures": [
+        "inn",
+        "blacksmith",
+        "market-stall",
+        "homes"
+      ],
+      "npcs": [
+        "merchant",
+        "blacksmith",
+        "guard",
+        "villager"
+      ],
+      "enemies": []
+    },
+    {
+      "id": "whispering-forest",
+      "name": "ささやきの森",
+      "terrain": "forest",
+      "structures": [
+        "bridge",
+        "ruins"
+      ],
+      "npcs": [
+        "traveler"
+      ],
+      "enemies": [
+        "slime",
+        "goblin",
+        "wolf"
+      ]
+    },
+    {
+      "id": "crystal-cave",
+      "name": "水晶の洞窟",
+      "terrain": "cave",
+      "structures": [
+        "treasure-chest",
+        "stone-gate"
+      ],
+      "npcs": [],
+      "enemies": [
+        "bat",
+        "golem"
+      ]
+    }
+  ],
+  "motion_sets": {
+    "humanoid": [
+      "idle",
+      "walk",
+      "run",
+      "jump",
+      "attack",
+      "dodge",
+      "hit",
+      "death",
+      "interact"
+    ],
+    "merchant": [
+      "idle",
+      "talk",
+      "wave",
+      "trade"
+    ],
+    "quadruped": [
+      "idle",
+      "walk",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "slime": [
+      "idle",
+      "hop",
+      "attack",
+      "hit",
+      "death"
+    ]
+  },
+  "rules": {
+    "paid_meshy_requests": false,
+    "requires_explicit_approval": true,
+    "automatic_merge": false,
+    "output": "glb",
+    "review_mobile_performance": true
+  }
+}
