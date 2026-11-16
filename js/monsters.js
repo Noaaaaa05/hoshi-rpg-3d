@@ -3,7 +3,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
 // Eight enemies share geometry/materials. Default monsters add a fixed 12 draw calls.
 export function createMonsters(scene,combat) {
-  const enemies=combat.enemies,slimes=enemies.filter(e=>e.type==='slime'),goblins=enemies.filter(e=>e.type==='goblin');
+  const enemies=combat.enemies,slimes=enemies.filter(e=>e.variant==='slime'),goblins=enemies.filter(e=>e.variant==='goblin');
   const root=new THREE.Object3D(),part=new THREE.Object3D(),matrix=new THREE.Matrix4(),white=new THREE.Color(2,1.5,1.3),normal=new THREE.Color(1,1,1);
   const mat=color=>new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true});
   const batches=[];
@@ -35,8 +35,8 @@ export function createMonsters(scene,combat) {
   }
   function prepare(e,time) {
     const dying=e.hp<=0,fade=dying?Math.max(0,1-e.deathTime/.9):1;
-    const bob=e.moving?Math.sin(time*(e.type==='slime'?8:10)+e.id)*.06:0;
-    root.position.set(e.x,e.y+(dying?0:bob),e.z);root.rotation.set(0,e.angle,dying&&e.type==='goblin'?Math.min(1.5,e.deathTime*3):0);
+    const bob=e.moving?Math.sin(time*(e.variant==='slime'?8:10)+e.id)*.06:0;
+    root.position.set(e.x,e.y+(dying?0:bob),e.z);root.rotation.set(0,e.angle,dying&&e.variant==='goblin'?Math.min(1.5,e.deathTime*3):0);
     root.scale.setScalar(fade);root.updateMatrix();return !e.modelLoaded&&fade>0&&Math.hypot(e.x-combat.motor.x,e.z-combat.motor.z)<55;
   }
   function animateCustom(e,entry,dt) {
@@ -91,7 +91,7 @@ export function createMonsters(scene,combat) {
       }
       for(const e of enemies){
         const visible=e.hp>0&&Math.hypot(e.x-combat.motor.x,e.z-combat.motor.z)<20;
-        const height=e.type==='slime'?1.25:1.95;
+        const height=e.variant==='slime'?1.25:1.95;
         root.position.set(e.x,e.y+height,e.z);root.quaternion.copy(camera.quaternion);root.scale.setScalar(1);root.updateMatrix();
         put(bars,e.id,0,0,0,.92,.09,1,0,0,0,visible);
         const health=e.hp/e.maxHP;put(fills,e.id,-.44*(1-health),0,.008,.88*health,.055,1,0,0,0,visible);

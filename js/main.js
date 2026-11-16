@@ -6,9 +6,14 @@ import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
 import { loadModels } from './models.js?v=0.2.6';
-import { loadSave, writeSave } from './storage.js?v=0.2.0';
-import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.6';
-import { createMonsters } from './monsters.js?v=0.2.0';
+import { loadSave, writeSave } from './storage.js?v=0.2.7';
+import { CombatSystem, ENEMY_SPAWNS } from './combat.js?v=0.2.7';
+import { createMonsters } from './monsters.js?v=0.2.7';
+import { emptyCatalog } from './rpg-content.js';
+import { loadRpgCatalog } from './rpg-visuals.js';
+import { RpgProgress } from './rpg-progress.js';
+import { createRpgWorld } from './rpg-world.js';
+import { createRpgUI } from './rpg-ui.js';
 
 const $=selector=>document.querySelector(selector);
 let renderer;
@@ -30,15 +35,43 @@ async function init() {
   const world=createWorld(scene), motor=new PlayerMotor(world.grid), player=createPlayer(scene), input=new Input();
   const drawMap=createMap($('#minimap'),world);
   const saved=loadSave(), collected=new Set(saved?.stars || []), discovered=new Set(saved?.landmarks || []);
-  const combat=new CombatSystem(motor,world.grid,saved?.progression),monsters=createMonsters(scene,combat);
+  const loadedCatalog=await loadRpgCatalog();
+  const catalog=loadedCatalog??emptyCatalog(),progress=new RpgProgress(catalog,saved?.rpg);
+  const content=await createRpgWorld(scene,world.grid,catalog,progress);
+  const combat=new CombatSystem(motor,world.grid,saved?.progression,[...ENEMY_SPAWNS,...content.enemySpawns]);
+  content.bindEnemies(combat);
+  const monsters=createMonsters(scene,combat);
   if(saved)motor.hp=saved.hp;
-  const village=createVillage(scene,world.grid,{initialInventory:saved?.villageInventory,onInventoryChange:()=>save(),healPlayer:(amount)=>{if(motor.hp>=combat.progression.maxHP)return false;motor.hp=Math.min(combat.progression.maxHP,motor.hp+amount);return true;}});
+  function healPlayer(amount) {
+    if(motor.hp>=combat.progression.maxHP)return false;
+    motor.hp=Math.min(combat.progression.maxHP,motor.hp+amount);
+    return true;
+  }
+  const village=createVillage(scene,world.grid,{initialInventory:saved?.villageInventory,onInventoryChange:()=>save(),healPlayer});
   const inventoryPanel=$('#inventory-panel'),inventoryButton=$('#inventory-button');
+  let queuedSkill=null;
+  const contentUI=createRpgUI({catalog,world:content,progress,motor,inventory:inventoryPanel,onChange:()=>save(),heal:healPlayer,
+    queueSkill(id) {
+      if(!started||paused||isPortrait())return;
+      queuedSkill=progress.skills.find(([key])=>key===id)?.[1]??null;
+      closeInventory();
+    },
+    moveTo(zone) {
+      const spot=world.grid.resolve(zone.x,zone.z);
+      motor.reset(spot.x,spot.z);
+      input.reset();combat.resetPlayer();updateCamera(0,true);save();
+    }
+  });
+  window.addEventListener('keydown',event=>{
+    if(event.code==='KeyL'&&!event.repeat&&started&&!paused&&!isPortrait()&&
+        !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))queuedSkill=progress.skills[0]?.[1]??null;
+  });
   function refreshInventory(){
     const inv=village.getInventory();
     $('#inventory-gold').textContent=`所持金 ${inv.gold}G`;
     $('#inventory-herb').textContent=`🌿 薬草 ×${inv.herbs}　使う（HP +30）`;
     $('#inventory-herb').disabled=inv.herbs===0;
+    contentUI.renderInventory();
   }
   function closeInventory(){inventoryPanel.classList.add('hidden');}
   inventoryButton.addEventListener('click',()=>{
@@ -68,7 +101,7 @@ async function init() {
   const isPortrait=()=>matchMedia('(orientation:portrait) and (pointer:coarse)').matches;
   function toast(message) {clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').classList.add('visible');toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),3500);}
   function save() {
-    return writeSave({position:{x:motor.x,z:motor.z},stars:[...collected],landmarks:[...discovered],quality,sensitivity:input.sensitivity,progression:combat.progression.toJSON(),hp:motor.hp,villageInventory:village.getInventory()});
+    return writeSave({position:{x:motor.x,z:motor.z},stars:[...collected],landmarks:[...discovered],quality,sensitivity:input.sensitivity,progression:combat.progression.toJSON(),hp:motor.hp,villageInventory:village.getInventory(),rpg:loadedCatalog?progress.toJSON():saved?.rpg});
   }
   function applyQuality() {
     const mobile=matchMedia('(pointer:coarse)').matches;
@@ -84,7 +117,7 @@ async function init() {
   }
   function pause() {
     if(!started)return;
-    closeInventory();paused=true;input.enabled=false;input.reset();$('#menu').classList.remove('hidden');save();
+    closeInventory();contentUI.close();queuedSkill=null;paused=true;input.enabled=false;input.reset();$('#menu').classList.remove('hidden');save();
   }
   function resume() {
     if(isPortrait())return;
@@ -135,21 +168,23 @@ async function init() {
     $('#xp-fill').style.transform=`scaleX(${stats.xp/stats.neededXP})`;
     $('#xp-value').textContent=stats.level===50?'MAX':`${stats.xp} / ${stats.neededXP}`;
     $('#xp-meter').setAttribute('aria-valuenow',stats.xp);$('#xp-meter').setAttribute('aria-valuemax',stats.neededXP);
-    $('#attack-stat').textContent=stats.attack;$('#level-stat').textContent=stats.level;$('#kills-stat').textContent=stats.kills;
+    $('#attack-stat').textContent=combat.attackPower;$('#level-stat').textContent=stats.level;$('#kills-stat').textContent=stats.kills;
     $('#dodge-button').classList.toggle('exhausted',motor.stamina<22||combat.dodgeCooldown>0);
     $('#attack-button').classList.toggle('swinging',combat.attacking);
     $('#damage-flash').classList.toggle('visible',combat.hurtTime>0);
     const enemy=combat.getTarget();$('#enemy-target').classList.toggle('hidden',!enemy);
-    if(enemy){$('#enemy-name').textContent=ENEMY_TYPES[enemy.type].name;$('#enemy-health').textContent=`${enemy.hp} / ${enemy.maxHP}`;$('#enemy-fill').style.transform=`scaleX(${enemy.hp/enemy.maxHP})`;$('#enemy-threat').textContent=enemy.state==='windup'?'攻撃の構え':'';}
+    if(enemy){$('#enemy-name').textContent=enemy.config.name;$('#enemy-health').textContent=`${enemy.hp} / ${enemy.maxHP}`;$('#enemy-fill').style.transform=`scaleX(${enemy.hp/enemy.maxHP})`;$('#enemy-threat').textContent=enemy.state==='windup'?'攻撃の構え':'';}
     $('#star-count').textContent=collected.size;$('#landmark-count').textContent=`${discovered.size} / 3 風景を発見`;
     $('#dash-button').classList.toggle('exhausted',motor.exhausted);
     const headings=['N','NW','W','SW','S','SE','E','NE'];$('#heading').textContent=headings[((Math.round(yaw/(Math.PI/4))%8)+8)%8];
     let nearest=null,nearestDistance=Infinity;
     for(const l of LANDMARKS){const d=Math.hypot(motor.x-l.x,motor.z-l.z);if(d<nearestDistance){nearest=l;nearestDistance=d;}}
-    $('#area-name').textContent=nearestDistance<16?nearest.name:'木漏れ日の小径';
+    $('#area-name').textContent=content.areaAt(motor.x,motor.z)?.name??(nearestDistance<16?nearest.name:'木漏れ日の小径');
     drawMap(motor,yaw,discovered);
   }
   function explore(dt) {
+    const area=content.areaAt(motor.x,motor.z);
+    if(area&&progress.record('visit',area.id)){save();if(!inventoryPanel.classList.contains('hidden'))contentUI.renderInventory();}
     for(const star of world.stars)if(!collected.has(star.id)&&Math.hypot(motor.x-star.x,motor.z-star.z)<1.25&&Math.abs(motor.y+1-star.group.position.y)<2){
       collected.add(star.id);star.group.visible=false;motor.stamina=Math.min(100,motor.stamina+22);toast(`✧ 星灯りを見つけた　${collected.size} / 8`);save();
     }
@@ -165,7 +200,8 @@ async function init() {
       const enemy=event.id!==undefined?combat.enemies[event.id]:null;
       if(event.type==='hit')monsters.damage(enemy.x,enemy.y+1,enemy.z,event.damage);
       if(event.type==='hurt')monsters.damage(motor.x,motor.y+1.7,motor.z,`−${event.damage}`,true);
-      if(event.type==='kill'){toast(`${ENEMY_TYPES[enemy.type].name}を倒した　EXP +${event.xp}`);save();}
+      if(event.type==='kill'){if(enemy.contentActor)progress.record('defeat',enemy.contentActor);toast(`${enemy.config.name}を倒した　EXP +${event.xp}`);save();}
+      if(event.type==='skill')toast(event.name);
       if(event.type==='levelup'){toast(`LEVEL UP　Lv. ${event.level}　HP ${combat.progression.maxHP} / 攻撃力 ${combat.progression.attack}`);save();}
     }
   }
@@ -175,9 +211,9 @@ async function init() {
     if(document.hidden)return;
     elapsed+=dt;
     if(started&&!paused&&!isPortrait()) {
-      const state=input.read();yaw-=state.lookX;pitch=clamp(pitch+state.lookY,.07,.96);
+      const state=input.read(),skill=queuedSkill;queuedSkill=null;combat.attackBonus=progress.attackBonus;yaw-=state.lookX;pitch=clamp(pitch+state.lookY,.07,.96);
       const substeps=Math.max(1,Math.ceil(dt/(1/60)));
-      for(let i=0;i<substeps;i++)combat.step(dt/substeps,{...state,jump:state.jump&&i===0,attack:state.attack&&i===0,dodge:state.dodge&&i===0},yaw);
+      for(let i=0;i<substeps;i++)combat.step(dt/substeps,{...state,jump:state.jump&&i===0,attack:state.attack&&i===0,dodge:state.dodge&&i===0,skill:i===0?skill:null},yaw);
       combatEvents();explore(dt);saveTimer+=dt;
       if(saveTimer>5){saveTimer=0;save();}
       if(quality==='auto') {
@@ -188,6 +224,8 @@ async function init() {
         }
       }
     }
+    const active=started&&!paused&&!isPortrait();
+    content.update(active?dt:0,motor);contentUI.update(active);
     world.update(elapsed);village.update(dt,motor.x,motor.z,started&&!paused&&!isPortrait(),elapsed);player.update(started&&!paused&&!isPortrait()?dt:0,motor,heightAt(motor.x,motor.z),combat);updateModels(dt);
     updateCamera(dt);monsters.update(started&&!paused&&!isPortrait()?dt:0,combat.time,camera);hudTimer+=dt;if(hudTimer>.1){hudTimer=0;updateHUD();}
     renderer.render(scene,camera);
@@ -195,8 +233,8 @@ async function init() {
   }
   applyQuality();resize();updateCamera(0,true);updateHUD();player.update(0,motor,heightAt(motor.x,motor.z));
   if(new URLSearchParams(location.search).has('debug'))Object.defineProperty(window,'__HOSHI_DEBUG__',{get:()=>({
-    player:{x:motor.x,y:motor.y,z:motor.z,angle:motor.angle,speed:motor.speed,stamina:motor.stamina,hp:motor.hp,grounded:motor.grounded,dashing:motor.dashing,maxHP:combat.progression.maxHP,attack:combat.progression.attack,level:combat.progression.level,xp:combat.progression.xp},
-    playerModel:player.getModelStatus(),
+    player:{x:motor.x,y:motor.y,z:motor.z,angle:motor.angle,speed:motor.speed,stamina:motor.stamina,hp:motor.hp,grounded:motor.grounded,dashing:motor.dashing,maxHP:combat.progression.maxHP,attack:combat.attackPower,level:combat.progression.level,xp:combat.progression.xp},
+    playerModel:player.getModelStatus(),rpg:content.debug(),
     camera:{yaw,pitch,x:camera.position.x,y:camera.position.y,z:camera.position.z},started,paused,
     stars:[...collected],landmarks:[...discovered],input:{joyId:input.joyId,cameraId:input.cameraId,dashId:input.dashId},
     combat:{attacking:combat.attacking,attackPhase:combat.attackPhase,dodging:combat.dodging,dodgeCooldown:combat.dodgeCooldown,dodgeType:combat.dodgeType,dodgePhase:combat.dodgePhase,dodgeSerial:combat.dodgeSerial,landingTime:combat.landingTime,landingSerial:combat.landingSerial,kills:combat.progression.kills,time:combat.time},

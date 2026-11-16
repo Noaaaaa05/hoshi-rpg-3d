@@ -12,6 +12,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Verify the exact branch tip for same-repository content releases.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'codex/rpg-content-') && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -19,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run meshy:dry-run
+      - name: Validate RPG catalog
+        run: npm run rpg:check
       - run: npm test
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:browser

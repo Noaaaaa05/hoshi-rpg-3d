@@ -1,7 +1,10 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 const files=(await readdir('js')).filter(p=>p.endsWith('.js')).map(p=>'js/'+p);
-files.push('scripts/serve.mjs','scripts/check.mjs',...(await readdir('scripts/meshy')).filter(p=>p.endsWith('.mjs')).map(p=>'scripts/meshy/'+p));
+files.push('scripts/serve.mjs','scripts/check.mjs');
+for (const directory of ['scripts/meshy', 'scripts/rpg']) {
+  files.push(...(await readdir(directory)).filter(p => p.endsWith('.mjs')).map(p => directory + '/' + p));
+}
 for(const file of files){const r=spawnSync(process.execPath,['--check',file],{stdio:'inherit'});if(r.status!==0)process.exit(r.status||1);}
 JSON.parse(await readFile('assets/models/manifest.json','utf8'));
 JSON.parse(await readFile('config/meshy-motions.json','utf8'));

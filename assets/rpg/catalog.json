@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "models": {
+    "hero": {
+      "type": "glb",
+      "preset": "scout",
+      "file": "models/hero_animated.glb",
+      "sha256": "e0328f8a7a8b43f744ab6058422795bdd48e5dafd5fa140f13161d8a88d0aaa0",
+      "height": 1.9,
+      "color": "#c5ccbe",
+      "bones": 66
+    }
+  },
+  "motions": {
+    "hero-idle": {
+      "model": "hero",
+      "clip": "Idle_03",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.16
+    },
+    "hero-walk": {
+      "model": "hero",
+      "clip": "Walking",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.16
+    },
+    "hero-run": {
+      "model": "hero",
+      "clip": "Running",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.16
+    },
+    "hero-attack": {
+      "model": "hero",
+      "clip": "Attack",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.16,
+      "range": [
+        0.9,
+        1.42
+      ]
+    },
+    "hero-roll": {
+      "model": "hero",
+      "clip": "Hoshi_roll",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.08,
+      "file": "models/motions/roll-d0b3c225826c.glb",
+      "sha256": "d0b3c225826c603aa969e2329b62cc12dd90cd93628072a1c4489ae0d4789e08"
+    }
+  },
+  "actors": {},
+  "zones": {},
+  "placements": {},
+  "dialogues": {},
+  "quests": {},
+  "items": {},
+  "skills": {}
+}

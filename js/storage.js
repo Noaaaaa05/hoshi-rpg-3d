@@ -15,6 +15,7 @@ export function loadSave() {
       landmarks: Array.isArray(data.landmarks) ? [...new Set(data.landmarks.filter(v => ['gate','tree','camp'].includes(v)))] : [],
       quality: ['auto','low','high'].includes(data.quality) ? data.quality : 'auto',
       sensitivity: Number.isFinite(data.sensitivity) ? clamp(data.sensitivity, .4, 1.8) : 1,
+      ...(data.rpg && typeof data.rpg==='object' && !Array.isArray(data.rpg) ? {rpg:data.rpg} : {}),
       villageInventory: {
         herbs:Number.isInteger(data.villageInventory?.herbs)?clamp(data.villageInventory.herbs,0,999):0,
         gold:Number.isInteger(data.villageInventory?.gold)?clamp(data.villageInventory.gold,0,999999):100
