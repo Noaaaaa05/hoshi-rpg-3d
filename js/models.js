@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { heightAt } from './physics.js';
-import { prepareModel, createPlayerAnimator } from './model-utils.js?v=0.2.1';
+import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.2';
 
 // Keep URLs relative to this manifest, so GitHub Pages project paths work.
 export async function loadModels(scene, player, grid, onWarning = console.warn, monsters = null) {
-  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.1', import.meta.url);
+  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.2', import.meta.url);
   const response = await fetch(manifestURL);
   if (!response.ok) throw new Error(`Model manifest: HTTP ${response.status}`);
   const manifest = await response.json();
@@ -30,10 +30,19 @@ export async function loadModels(scene, player, grid, onWarning = console.warn, 
   if (manifest.player) {
     try {
       const { gltf, wrapper, info } = await load(manifest.player);
-      const animator = createPlayerAnimator(gltf.scene,gltf.animations,manifest.player.animations);
+      const animator = createPlayerAnimator(gltf.scene,gltf.animations,manifest.player.animations,manifest.player.animationOptions);
+      const grounding = manifest.player.animationOptions?.grounding ? createFootGrounding(wrapper,manifest.player.footOffset||0) : null;
+      const weapon = attachSword(gltf.scene,manifest.player.weapon);
       // Install only after transforms/materials/animations have all been validated.
-      player.replaceVisual(wrapper,{...info,mode:animator?'animated':'static',states:animator?.clips || {}});
-      player.animateModel = animator ? (dt,motor,combat)=>animator.update(dt,motor,combat) : null;
+      player.replaceVisual(wrapper,{...info,mode:animator?'animated':'static',states:animator?.clips || {},weapon,
+        missingStates:['idle','walk','run','attack','jump','dodge'].filter(state=>!animator?.clips[state])});
+      let poseReady=false;
+      player.animateModel = animator ? (dt,motor,combat)=>{
+        if(dt===0&&poseReady)return;
+        animator.update(dt,motor,combat);grounding?.update();poseReady=true;
+      } : null;
+      const poseBone=weapon?gltf.scene.getObjectByName(weapon.bone):null;
+      player.animationStatus = ()=>({animation:animator?.getStatus()||null,grounding:grounding?.getStatus()||null,boneQuaternion:poseBone?.quaternion.toArray()||null});
     } catch (error) { player.restoreVisual(); onWarning('主人公GLBの読み込みに失敗。簡易モデルを使用します。', error); }
   }
   for (const type of ['slime', 'goblin']) {

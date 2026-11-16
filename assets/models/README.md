@@ -2,13 +2,13 @@
 
 ゲームのプログラムを変更せず、`manifest.json`で設定できます。ファイル名の大文字・小文字は区別されます。
 
-現在のMeshy主人公は導入済みです。原本 `hero.glb` を保持し、表示には軽量版 `hero-mobile.glb` を使用しています。検査結果と設定の意味は [HERO.md](HERO.md) を参照してください。
+現在はアニメーション付き `hero_animated.glb` を使用しています。クリップ名・剣・接地の設定は [ANIMATIONS.md](ANIMATIONS.md) を参照してください。以前の静的な `hero.glb` と `hero-mobile.glb` も保持しており、記録は [HERO.md](HERO.md) にあります。
 
 ## 主人公を差し替える
 
 1. Meshyから**テクスチャを埋め込んだGLB**をダウンロードします。
 2. `hero.glb`としてこのフォルダにアップロードします。
-3. `manifest.json`を次のように編集します。新しい `hero.glb` をアップロードした場合は、`player.url` を `./hero.glb` に変更してください（既定は軽量版です）。
+3. `manifest.json`を次のように編集します。新しい `hero.glb` をアップロードした場合は、`player.url` を `./hero.glb` に変更してください（既定はアニメーション付きモデルです）。
 
 ```json
 {

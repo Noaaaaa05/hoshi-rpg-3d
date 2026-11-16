@@ -33,14 +33,17 @@ export function createPlayer(scene) {
   let phase = 0, customModel = null;
   const fallbackInfo = {loaded:false,type:'procedural',mode:'procedural',minY:0,clips:[],states:{}};
   const api = { group, animateModel: null, modelInfo: {...fallbackInfo},
-    getModelStatus() { return {...api.modelInfo,proceduralVisible:visual.visible,modelVisible:!!customModel?.visible}; },
+    getModelStatus() {
+      const status=api.animationStatus?.()||{};
+      return {...api.modelInfo,...status,worldFootY:group.position.y+(status.grounding?.minFootY??api.modelInfo.minY),proceduralVisible:visual.visible,modelVisible:!!customModel?.visible};
+    },
     replaceVisual(model,info) {
       if(customModel)group.remove(customModel);
       customModel=model;group.add(model);visual.visible=false;api.modelInfo=info;
     },
     restoreVisual() {
       if(customModel)group.remove(customModel);
-      customModel=null;visual.visible=true;api.animateModel=null;api.modelInfo={...fallbackInfo};
+      customModel=null;visual.visible=true;api.animateModel=null;api.animationStatus=null;api.modelInfo={...fallbackInfo};
     },
     update(dt, motor, ground, combat) {
       group.position.set(motor.x,motor.y,motor.z); group.rotation.y = motor.angle;

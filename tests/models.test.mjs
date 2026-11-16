@@ -49,12 +49,12 @@ function readGLB(buffer) {
   assert.equal(buffer.readUInt32LE(0),0x46546c67);assert.equal(buffer.readUInt32LE(4),2);assert.equal(buffer.readUInt32LE(8),buffer.length);
   return JSON.parse(buffer.subarray(20,20+buffer.readUInt32LE(12)).toString('utf8'));
 }
-test('the uploaded hero and mobile derivative remain static, with a small render budget',async()=>{
+test('previous static assets remain available while the default switches to the animated hero',async()=>{
   const sourceBytes=await readFile('assets/models/hero.glb'),mobileBytes=await readFile('assets/models/hero-mobile.glb');
   const source=readGLB(sourceBytes),mobile=readGLB(mobileBytes);
   for(const document of [source,mobile]){assert.equal(document.skins?.length||0,0);assert.equal(document.animations?.length||0,0);assert.equal(document.extensionsRequired?.length||0,0);}
   const triangles=document=>document.meshes.reduce((count,m)=>count+m.primitives.reduce((n,p)=>n+document.accessors[p.indices].count/3,0),0);
   assert.ok(triangles(mobile)<=15000);assert.ok(triangles(mobile)<triangles(source)*.15);assert.ok(mobileBytes.length<350000);
   const manifest=JSON.parse(await readFile('assets/models/manifest.json','utf8'));
-  assert.equal(manifest.player.url,'./hero-mobile.glb');assert.equal(manifest.player.source,'./hero.glb');assert.equal(manifest.player.rotationY,0);
+  assert.equal(manifest.player.url,'./hero_animated.glb');assert.equal(manifest.player.source,'./アニメモーション.glb');assert.equal(manifest.player.rotationY,0);
 });

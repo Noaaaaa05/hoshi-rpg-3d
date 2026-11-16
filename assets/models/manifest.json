@@ -1,18 +1,40 @@
 {
   "player": {
-    "url": "./hero-mobile.glb",
-    "source": "./hero.glb",
+    "url": "./hero_animated.glb",
+    "source": "./アニメモーション.glb",
     "height": 1.9,
     "rotationY": 0,
     "footOffset": 0,
     "fallbackColor": "#c5ccbe",
     "animations": {
-      "idle": "Idle",
-      "walk": "Walk",
-      "run": "Run",
-      "attack": "Attack",
-      "jump": "Jump",
-      "dodge": "Dodge"
+      "idle": "Idle_03",
+      "walk": "Walking",
+      "run": "Running",
+      "attack": "Attack"
+    },
+    "animationOptions": {
+      "fadeDuration": 0.16,
+      "attackRange": [
+        0.9,
+        1.42
+      ],
+      "walkReferenceSpeed": 4.1,
+      "runReferenceSpeed": 8,
+      "grounding": true
+    },
+    "weapon": {
+      "bone": "mixamorigRightHand",
+      "position": [
+        0,
+        0.06,
+        0
+      ],
+      "direction": [
+        0.10009,
+        0.83408,
+        -0.54249
+      ],
+      "length": 0.78
     }
   },
   "objects": [],
