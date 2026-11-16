@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "hero",
+      "role": "hero",
+      "name": "Azure Swordsman",
+      "prompt": "Original anime fantasy swordsman, navy coat with gold trim, dark blue hair, full body, neutral A-pose, separated limbs, clean silhouette, game-ready."
+    },
+    {
+      "id": "enemy-grunt",
+      "role": "enemy",
+      "name": "Forest Raider",
+      "prompt": "Original fantasy forest raider enemy, practical leather armor, masked face, full body, neutral A-pose, separated limbs, clean silhouette, game-ready."
+    }
+  ],
+  "motions": [
+    "idle",
+    "walk",
+    "run",
+    "attack",
+    "dodge",
+    "hit",
+    "death"
+  ],
+  "output": "glb",
+  "skeleton": "mixamo"
+}
