@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
+import { createVillage } from './village.js';
 import { createPlayer } from './player.js?v=0.2.3';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
@@ -28,6 +29,7 @@ async function init() {
   const camera=new THREE.PerspectiveCamera(57,1,.15,280);
   const world=createWorld(scene), motor=new PlayerMotor(world.grid), player=createPlayer(scene), input=new Input();
   const drawMap=createMap($('#minimap'),world);
+  const village=createVillage(scene);
   const saved=loadSave(), collected=new Set(saved?.stars || []), discovered=new Set(saved?.landmarks || []);
   const combat=new CombatSystem(motor,world.grid,saved?.progression),monsters=createMonsters(scene,combat);
   if(saved)motor.hp=saved.hp;
@@ -166,7 +168,7 @@ async function init() {
         }
       }
     }
-    world.update(elapsed);player.update(started&&!paused&&!isPortrait()?dt:0,motor,heightAt(motor.x,motor.z),combat);updateModels(dt);
+    world.update(elapsed);village.update(dt,motor.x,motor.z,started&&!paused&&!isPortrait(),elapsed);player.update(started&&!paused&&!isPortrait()?dt:0,motor,heightAt(motor.x,motor.z),combat);updateModels(dt);
     updateCamera(dt);monsters.update(started&&!paused&&!isPortrait()?dt:0,combat.time,camera);hudTimer+=dt;if(hudTimer>.1){hudTimer=0;updateHUD();}
     renderer.render(scene,camera);
     if(!ready){ready=true;$('#start-button').textContent=saved?'旅のつづきへ　 →':'森を歩きはじめる　 →';$('#start-button').disabled=false;}
@@ -180,7 +182,7 @@ async function init() {
     combat:{attacking:combat.attacking,attackPhase:combat.attackPhase,dodging:combat.dodging,dodgeCooldown:combat.dodgeCooldown,dodgeType:combat.dodgeType,dodgePhase:combat.dodgePhase,dodgeSerial:combat.dodgeSerial,landingTime:combat.landingTime,landingSerial:combat.landingSerial,kills:combat.progression.kills,time:combat.time},
     combatPointers:{attackId:input.attackId,dodgeId:input.dodgeId},
     enemies:combat.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,z:e.z,hp:e.hp,maxHP:e.maxHP,state:e.state,stateTime:e.stateTime,modelLoaded:e.modelLoaded})),
-    drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio,colliders:world.grid.items.length
+    drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,pixelRatio,colliders:world.grid.items.length,villageInventory:village.getInventory()
   })});
   requestAnimationFrame(frame);
 }
