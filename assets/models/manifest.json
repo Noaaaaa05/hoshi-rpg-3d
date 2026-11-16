@@ -20,7 +20,8 @@
       ],
       "walkReferenceSpeed": 4.1,
       "runReferenceSpeed": 8,
-      "grounding": true
+      "grounding": true,
+      "uprightIdleFromWalk": true
     },
     "weapon": {
       "bone": "mixamorigRightHand",
