@@ -8,11 +8,14 @@
     "test": "node --import ./tests/register-three.mjs --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
     "test:browser": "playwright test",
+    "test:browser:chromium": "playwright test --project=chromium-desktop --project=chromium-touch",
     "meshy:dry-run": "node scripts/meshy/generate.mjs --dry-run",
     "meshy:generate": "node scripts/meshy/generate.mjs --execute",
     "rpg:check": "node --import ./tests/register-three.mjs scripts/rpg/catalog.mjs check",
     "rpg:apply": "node --import ./tests/register-three.mjs scripts/rpg/catalog.mjs apply",
     "rpg:release": "node scripts/rpg/release.mjs",
+    "rpg:asset": "node --import ./tests/register-three.mjs scripts/rpg/asset.mjs",
+    "rpg:verify-pages": "node scripts/rpg/verify-pages.mjs",
     "meshy:retrieve": "node scripts/meshy/retrieve-task.mjs"
   },
   "devDependencies": {

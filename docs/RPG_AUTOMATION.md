@@ -30,6 +30,15 @@ npm run test:browser
 
 会話は近くの「話す」ボタンまたはPCの **F**。技は持ち物に表示されるボタンまたはPCの **L**（使用可能な先頭の技）。進行、獲得アイテム、装備、仲間は既存の端末内セーブに追加される。見回りの例では、開始地点の右側にいるミナに話し、北東の小屋と灯りを訪ねて戻る。
 
+## 追加前後の検査
+
+| コマンド | 内容 |
+| --- | --- |
+| `npm run rpg:check`、`npm run rpg:apply` | 形式、参照、GLBの上限に加えて、遊べるかを検査する。受注や報告ができないクエスト、配置されていない討伐対象、小物の当たり判定や別のエリアに覆われて入れない訪問先、使えない移動先、取れなくなる星灯りはエラーで止まる。登場しないキャラクターや会話、入手できないアイテムは `warnings` に出る。 |
+| `npm run rpg:asset -- assets/models/<名前>.glb` | GLBの容量、三角形、テクスチャ、骨数、クリップ、SHA-256を測り、`models` と `motions` の登録エントリを依頼JSONの形で出力する。アニメーション専用のGLBには `--model <骨格付きモデルのID>` を付けると、骨格の一致も確認する。IDは `--id` で指定できる。読むのは手元のファイルだけで、Meshyなどへの通信はない。`height`、`preset`、`color` は初期値なので依頼に合わせて直す。 |
+| `HOSHI_CHROMIUM_PATH=<Chromiumの実行ファイル> npm run test:browser:chromium` | ブラウザをダウンロードできないセッションで、インストール済みのChromiumを使ってChromiumの2プロジェクトを実行する。Claude Codeのクラウドセッションでは `/opt/pw-browsers/chromium`。WebKitはPRの `Game checks` で確認する。 |
+| `npm run rpg:verify-pages` | 公開URLが配信しているファイルを、手元のファイルとSHA-256で照合する。`-- --wait 600` を付けると一致するまで最大10分待つ。 |
+
 ## PRと公開
 
 1. コードやワークフロー、モデルファイルの差し替えを含むPRは、差分をレビューし、`Game checks` の結果を待ってWorkでマージする。
@@ -38,7 +47,7 @@ npm run test:browser
 4. ActionsにマージとPages buildの権限があれば、確認済みのSHAを指定してマージし、Pagesのビルドを要求する。既存のPages公開元は `main /(root)`。
 5. Actions側で権限やイベントの問題がある場合、`npm run rpg:release -- <PR番号> <確認したhead SHA>` で同じゲートを検査し、WorkのGitHub接続でマージする。すでにマージ済みならデプロイ結果を調べる。再度マージしない。
 
-マージ後はPagesジョブ、公開URL、変更したカタログやGLBの配信を確認する。配信物か公開URLを起動して操作テストし、iPhone実機とブラウザのモバイル設定を区別して報告する。
+マージ後はPagesジョブ、公開URL、変更したカタログやGLBの配信を確認する。`main` へpushされるたびに `Pages verification` が動き、ゲームが読み込む全ファイルについて公開URLと `main` をSHA-256で照合する。セッションから公開URLへ接続できないときは、このワークフローの結果を読む。配信物か公開URLを起動して操作テストし、iPhone実機とブラウザのモバイル設定を区別して報告する。
 
 参照 [GitHubの自動マージ](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/automatically-merging-a-pull-request) · [Pagesのビルドを要求するAPI](https://docs.github.com/en/rest/pages/pages#request-a-github-pages-build)
 

@@ -1,0 +1,26 @@
+name: Pages verification
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # A newer commit on main replaces the wait for an older one.
+  group: pages-verification
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait until the public site serves this commit
+        shell: bash
+        run: node scripts/rpg/verify-pages.mjs --wait 600 | tee -a "$GITHUB_STEP_SUMMARY"
