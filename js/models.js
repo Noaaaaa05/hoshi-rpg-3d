@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { heightAt } from './physics.js';
-import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.3';
+import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.6';
 import { loadMotionLibrary } from './motion-library.js?v=0.2.3';
 
 // Keep URLs relative to this manifest, so GitHub Pages project paths work.
 export async function loadModels(scene, player, grid, onWarning = console.warn, monsters = null) {
-  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.3', import.meta.url);
+  const manifestURL = new URL('../assets/models/manifest.json?v=0.2.6', import.meta.url);
   const response = await fetch(manifestURL);
   if (!response.ok) throw new Error(`Model manifest: HTTP ${response.status}`);
   const manifest = await response.json();
@@ -41,7 +41,7 @@ export async function loadModels(scene, player, grid, onWarning = console.warn, 
       let poseReady=false;
       player.animateModel = animator ? (dt,motor,combat)=>{
         if(dt===0&&poseReady)return;
-        animator.update(dt,motor,combat);grounding?.update(animator.state);poseReady=true;
+        animator.update(dt,motor,combat);if(!combat?.dodging)grounding?.update(animator.state);poseReady=true;
       } : null;
       const poseBone=weapon?gltf.scene.getObjectByName(weapon.bone):null;
       player.animationStatus = ()=>({animation:animator?.getStatus()||null,grounding:grounding?.getStatus()||null,boneQuaternion:poseBone?.quaternion.toArray()||null});
