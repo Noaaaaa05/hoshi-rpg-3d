@@ -1,0 +1,20 @@
+name: AI character pipeline - safe plan
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build offline character plan (zero API calls)
+        run: node scripts/meshy/character-plan.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: character-plan
+          path: work/characters/plan.json
+          retention-days: 14
