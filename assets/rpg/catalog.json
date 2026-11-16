@@ -9,6 +9,24 @@
       "height": 1.9,
       "color": "#c5ccbe",
       "bones": 66
+    },
+    "mina-scout": {
+      "type": "procedural",
+      "preset": "scout",
+      "height": 1.8,
+      "color": "#789bbb"
+    },
+    "watchpost-beacon": {
+      "type": "procedural",
+      "preset": "beacon",
+      "height": 2.4,
+      "color": "#f2cb78"
+    },
+    "watchpost-hut": {
+      "type": "procedural",
+      "preset": "cottage",
+      "height": 2.8,
+      "color": "#6b8589"
     }
   },
   "motions": {
@@ -54,11 +72,136 @@
       "sha256": "d0b3c225826c603aa969e2329b62cc12dd90cd93628072a1c4489ae0d4789e08"
     }
   },
-  "actors": {},
-  "zones": {},
-  "placements": {},
-  "dialogues": {},
-  "quests": {},
-  "items": {},
-  "skills": {}
+  "actors": {
+    "mina": {
+      "name": "見張り番ミナ",
+      "role": "companion",
+      "model": "mina-scout",
+      "dialogue": "mina-watchpost"
+    }
+  },
+  "zones": {
+    "trail-rest": {
+      "name": "はじまりの休憩所",
+      "kind": "village",
+      "x": 3.2,
+      "z": 12,
+      "radius": 3.5
+    },
+    "watchpost": {
+      "name": "木漏れ日の見張り台",
+      "kind": "forest",
+      "x": 4.8,
+      "z": 5.5,
+      "radius": 2.5
+    }
+  },
+  "placements": {
+    "mina-trail": {
+      "zone": "trail-rest",
+      "actor": "mina",
+      "x": 2.6,
+      "z": 11.6,
+      "yaw": -1.57
+    },
+    "watchpost-lamp": {
+      "zone": "watchpost",
+      "model": "watchpost-beacon",
+      "x": 5.9,
+      "z": 5.2,
+      "collider": 0.45
+    },
+    "watchpost-shelter": {
+      "zone": "watchpost",
+      "model": "watchpost-hut",
+      "x": 6.5,
+      "z": 6.2,
+      "collider": 1.5
+    }
+  },
+  "dialogues": {
+    "mina-watchpost": {
+      "start": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "北東にある見張り台まで行って、灯りがついているか見てきてくれない？",
+          "choices": [
+            {
+              "label": "見回りを引き受ける",
+              "quest": "watchpost-round",
+              "action": "offer",
+              "next": "accepted"
+            },
+            {
+              "label": "見回りを報告する",
+              "quest": "watchpost-round",
+              "action": "turn-in",
+              "next": "thanks"
+            },
+            {
+              "label": "旅の話をする",
+              "quest": "watchpost-round",
+              "when": "complete",
+              "next": "thanks"
+            }
+          ]
+        },
+        "accepted": {
+          "text": "ありがとう。小径から北東に進むと、屋根の小屋と明かりが見えるよ。",
+          "choices": []
+        },
+        "thanks": {
+          "text": "おつかれさま。短剣と三連撃を旅に役立ててね。よかったら少しのあいだ一緒に行こう。",
+          "choices": [
+            {
+              "label": "ミナを仲間にする",
+              "action": "recruit",
+              "next": "joined"
+            }
+          ]
+        },
+        "joined": {
+          "text": "うん、ついていくよ。",
+          "choices": []
+        }
+      }
+    }
+  },
+  "quests": {
+    "watchpost-round": {
+      "name": "見張り台の見回り",
+      "description": "休憩所から北東の見張り台へ行き、灯りを確かめてミナへ報告しよう。",
+      "chapter": "side",
+      "goal": {
+        "kind": "visit",
+        "target": "watchpost",
+        "count": 1
+      },
+      "reward": {
+        "item": "watchpost-dagger",
+        "count": 1
+      }
+    }
+  },
+  "items": {
+    "watchpost-dagger": {
+      "name": "森番の短剣",
+      "kind": "weapon",
+      "attackBonus": 3
+    }
+  },
+  "skills": {
+    "watchpost-triple": {
+      "name": "小径の三連撃",
+      "duration": 0.86,
+      "stamina": 24,
+      "power": 0.55,
+      "hits": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "unlockQuest": "watchpost-round"
+    }
+  }
 }
