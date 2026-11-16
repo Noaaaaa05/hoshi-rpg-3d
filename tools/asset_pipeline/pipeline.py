@@ -320,6 +320,9 @@ def process_source(name, data, image, spec, out, corrections=None):
             a[:,:,3] = np.minimum(a[:,:,3], selected_mask.astype(np.uint8)*255)
             crop = Image.fromarray(a)
         support=np.asarray(crop.getchannel('A'))>36
+        occupancy=float(support.mean())
+        if int(support.sum())<25 and 'empty_cell' not in flags:
+            flags.append('empty_cell')
         cores,number_of_cores=ndi.label(ndi.binary_erosion(support,iterations=3),np.ones((3,3)))
         if number_of_cores:
             core_sizes=np.bincount(cores.ravel())[1:]

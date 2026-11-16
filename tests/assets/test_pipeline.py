@@ -109,5 +109,10 @@ class PipelineTests(unittest.TestCase):
         draw.rectangle((5,5,55,95),fill='red');draw.rectangle((65,5,115,95),fill='blue');draw.line((55,80,65,80),fill='black')
         catalog,_=extract(self.archive({'sheet.png':image}),self.root/'out',{'sources':{'sheet.png':{'category':'character'}}})
         self.assertEqual(len(catalog['assets']),1);self.assertIn('multi_lobe_review',catalog['assets'][0]['flags'])
+    def test_a_corrected_crop_with_no_object_is_a_failure_not_an_approvable_image(self):
+        archive=self.archive({'sheet.png':self.sheet()});first,_=extract(archive,self.root/'one');asset=first['assets'][0]
+        second,_=extract(archive,self.root/'two',corrections={'assets':{asset['id']:{'bbox':[85,0,120,20]}}})
+        corrected=next(a for a in second['assets'] if a['id']==asset['id'])
+        self.assertEqual(corrected['quality'],'failed');self.assertIn('empty_cell',corrected['flags']);self.assertEqual(corrected['foreground_ratio'],0)
 
 if __name__=='__main__':unittest.main()
