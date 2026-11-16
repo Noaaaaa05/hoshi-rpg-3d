@@ -29,10 +29,10 @@ async function init() {
   const camera=new THREE.PerspectiveCamera(57,1,.15,280);
   const world=createWorld(scene), motor=new PlayerMotor(world.grid), player=createPlayer(scene), input=new Input();
   const drawMap=createMap($('#minimap'),world);
-  const village=createVillage(scene,world.grid);
   const saved=loadSave(), collected=new Set(saved?.stars || []), discovered=new Set(saved?.landmarks || []);
   const combat=new CombatSystem(motor,world.grid,saved?.progression),monsters=createMonsters(scene,combat);
   if(saved)motor.hp=saved.hp;
+  const village=createVillage(scene,world.grid,{initialInventory:saved?.villageInventory,onInventoryChange:()=>save(),healPlayer:(amount)=>{if(motor.hp>=combat.progression.maxHP)return false;motor.hp=Math.min(combat.progression.maxHP,motor.hp+amount);return true;}});
   let quality=saved?.quality || 'auto';input.sensitivity=saved?.sensitivity || 1;
   $('#quality').value=quality;$('#sensitivity').value=String(input.sensitivity);
   for(const star of world.stars)star.group.visible=!collected.has(star.id);
@@ -48,7 +48,7 @@ async function init() {
   const isPortrait=()=>matchMedia('(orientation:portrait) and (pointer:coarse)').matches;
   function toast(message) {clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').classList.add('visible');toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),3500);}
   function save() {
-    return writeSave({position:{x:motor.x,z:motor.z},stars:[...collected],landmarks:[...discovered],quality,sensitivity:input.sensitivity,progression:combat.progression.toJSON(),hp:motor.hp});
+    return writeSave({position:{x:motor.x,z:motor.z},stars:[...collected],landmarks:[...discovered],quality,sensitivity:input.sensitivity,progression:combat.progression.toJSON(),hp:motor.hp,villageInventory:village.getInventory()});
   }
   function applyQuality() {
     const mobile=matchMedia('(pointer:coarse)').matches;
