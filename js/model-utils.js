@@ -73,6 +73,14 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
     actions[state].setEffectiveWeight(0);
     if (['attack','jump','dodge',...MOTION_STATES].includes(state)) {actions[state].setLoop(THREE.LoopOnce,1);actions[state].clampWhenFinished=true;}
   }
+  // A calm upright stance: hold the first frame of the walk cycle instead of
+  // the imported Idle_03 (which has a hunched/sleepy pose).
+  if(options.uprightIdleFromWalk && resolved.walk){
+    const stance=mixer.clipAction(resolved.walk.clone());
+    stance.setEffectiveWeight(0);
+    stance.setEffectiveTimeScale(0);
+    actions.idle=stance;
+  }
   const slots={...actions};
   if(resolved.attack){
     const alternate=mixer.clipAction(resolved.attack.clone());alternate.setEffectiveWeight(0).setLoop(THREE.LoopOnce,1);alternate.clampWhenFinished=true;
@@ -102,7 +110,7 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
           startWeights=Object.fromEntries(Object.entries(slots).map(([key,a])=>[key,a.getEffectiveWeight()]));
           fadeLength=repeatAttack?Math.min(.08,fade):fade;fadeTime=initial?fadeLength:0;
         }
-        if(action && (repeatAttack || repeatMotion || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
+        if(action && (repeatAttack || repeatMotion || !action.isRunning() || action.getEffectiveWeight()<.001)){action.reset().play();if(state==='idle'&&options.uprightIdleFromWalk)action.setEffectiveTimeScale(0);}
         active=action;
         if (state==='attack' && attackSlots.includes(action)) action.setEffectiveTimeScale(resolved.attack.duration/(combat.attackDuration || .52));
       }
