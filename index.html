@@ -9,7 +9,7 @@
   <meta name="description" content="星灯りを集めながら、静かな3Dの森を旅する。iPhone Safariで遊べるオリジナル探索アクションRPG。">
   <title>星灯りの森 3D — Ver.0.2.4</title>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=0.2.0">
+  <link rel="stylesheet" href="./style.css?v=0.2.5">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
 </head>
 <body class="intro-active">
@@ -39,8 +39,14 @@
       <div id="camera-zone" class="camera-zone" aria-label="ドラッグしてカメラを操作"></div>
       <div class="move-controls"><div id="joystick" class="joystick" role="group" aria-label="移動ジョイスティック"><div class="joystick-rim"></div><span class="joystick-cross">+</span><div id="joystick-thumb" class="joystick-thumb"></div></div><span class="control-caption">移動</span></div>
       <div class="action-controls"><button id="dash-button" class="action dash" type="button" aria-label="押し続けてダッシュ"><span class="action-symbol">»</span><span>ダッシュ</span></button><button id="jump-button" class="action jump" type="button" aria-label="ジャンプ"><span class="action-symbol">⌃</span><span>ジャンプ</span></button></div>
-      <div class="combat-controls"><button id="dodge-button" class="action dodge" type="button" aria-label="回避"><span class="action-symbol">↝</span><span>回避</span></button><button id="attack-button" class="action attack" type="button" aria-label="通常攻撃（長押しで連続攻撃）"><span class="action-symbol">⚔</span><span>攻撃</span></button></div>
+      <div class="combat-controls"><button id="inventory-button" class="action inventory-action" type="button" aria-label="持ち物を開く"><span class="action-symbol">▣</span><span>持ち物</span></button><button id="dodge-button" class="action dodge" type="button" aria-label="回避"><span class="action-symbol">↝</span><span>回避</span></button><button id="attack-button" class="action attack" type="button" aria-label="通常攻撃（長押しで連続攻撃）"><span class="action-symbol">⚔</span><span>攻撃</span></button></div>
       <div id="damage-numbers" aria-hidden="true"></div>
+      <section id="inventory-panel" class="inventory-panel hidden" aria-label="持ち物" role="dialog" aria-modal="false">
+        <strong>🎒 持ち物</strong><p id="inventory-gold">所持金 0G</p>
+        <button id="inventory-herb" type="button">🌿 薬草 ×0　使う（HP +30）</button>
+        <p id="inventory-message" role="status"></p>
+        <button id="inventory-close" type="button">閉じる</button>
+      </section>
       <span class="camera-caption">右側をスワイプして見回す</span>
       <footer class="world-footer"><span class="live-dot"></span>自由探索 <span>VER. 0.2.3</span></footer>
       <div id="discovery" class="discovery" aria-live="polite"><small>新しい風景を見つけた</small><p id="discovery-name"></p><span>✧</span></div>
@@ -56,6 +62,6 @@
     <section id="error" class="overlay hidden" role="alert"><div class="menu-card"><span class="eyebrow">星灯りの森 3D</span><h2>森を開けませんでした</h2><p id="error-message"></p><button class="primary-button" onclick="location.reload()">もう一度読み込む</button></div></section>
   </main>
   <script>window.addEventListener('error',function(e){if(e.message&&document.getElementById('start-button').disabled){document.getElementById('error-message').textContent='読み込みに失敗しました。ページを再読み込みしてください。'+e.message;document.getElementById('error').classList.remove('hidden');}});</script>
-  <script type="module" src="./js/main.js?v=0.2.4"></script>
+  <script type="module" src="./js/main.js?v=0.2.5"></script>
 </body>
 </html>
