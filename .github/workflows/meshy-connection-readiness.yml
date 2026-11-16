@@ -1,0 +1,26 @@
+name: Meshy connection readiness (no API calls)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+    steps:
+      - name: Verify secret is configured (never print its value)
+        shell: bash
+        run: |
+          if [ -z "$MESHY_API_KEY" ]; then
+            echo "::error::MESHY_API_KEY is missing in repository Actions secrets."
+            exit 1
+          fi
+          echo "MESHY_API_KEY is configured."
+          echo "No Meshy API request was sent. No credits were consumed."
+      - name: Report safe next step
+        run: |
+          echo "Connection readiness complete (secret presence only)."
+          echo "Actual API authentication and supported operations must be tested separately."
+          echo "Paid generation requires explicit per-run approval and credit cap."
