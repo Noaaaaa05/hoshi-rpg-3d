@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "status": "DRAFT_NOT_APPROVED",
+  "character": "Azure Swordsman",
+  "purpose": "Replace sleepy idle and rigid dodge with natural upright idle and real forward roll",
+  "steps": [
+    {
+      "id": "inspect-existing",
+      "type": "local",
+      "credits": 0,
+      "notes": "Inspect existing GLB rig and clips; reuse rig if compatible."
+    },
+    {
+      "id": "rig",
+      "type": "meshy-rigging",
+      "credits": 5,
+      "conditional": true,
+      "notes": "Only if existing rig cannot be reused. Requires eligible humanoid source model."
+    },
+    {
+      "id": "idle-motion",
+      "type": "meshy-text-to-motion",
+      "mode": "swift",
+      "credits": 3,
+      "prompt": "Confident fantasy swordsman standing upright, feet shoulder width, relaxed but alert posture, subtle chest breathing, no slouching, seamless idle loop."
+    },
+    {
+      "id": "roll-motion",
+      "type": "meshy-text-to-motion",
+      "mode": "swift",
+      "credits": 3,
+      "prompt": "Athletic swordsman crouches, tucks chin, performs one clean forward shoulder roll, then rises into a stable ready stance."
+    },
+    {
+      "id": "apply-idle",
+      "type": "meshy-animation",
+      "credits": 3,
+      "notes": "Retarget generated idle motion to rigged character."
+    },
+    {
+      "id": "apply-roll",
+      "type": "meshy-animation",
+      "credits": 3,
+      "notes": "Retarget generated roll motion to same rigged character."
+    },
+    {
+      "id": "integration",
+      "type": "local",
+      "credits": 0,
+      "notes": "Review GLB and clips, adjust state machine, test in iPhone browser before merge."
+    }
+  ],
+  "estimatedCredits": {
+    "ifExistingRigWorks": 12,
+    "ifNewRigNeeded": 17
+  },
+  "approval": {
+    "required": true,
+    "granted": false,
+    "perTaskApproval": true,
+    "maxCredits": null,
+    "automaticRetries": false
+  },
+  "apiRequestsEnabled": false
+}
