@@ -1,8 +1,8 @@
-# 星灯りの森 3D — Ver.0.2.3
+# 星灯りの森 3D — Ver.0.2.4
 
 ランタンひとつ、まだ知らない景色へ。iPhoneのSafariで遊べる、オリジナル3D探索アクションRPGです。Three.js / HTML / CSS / JavaScriptで制作しています。
 
-開発をChatGPT Workから進める場合は [RPG自動化の手順](docs/RPG_AUTOMATION.md) と [進捗](docs/AUTOMATION_PROGRESS.md) を参照してください。
+開発はChatGPT WorkとClaude Codeのどちらからでも進められます。共通の [RPG自動化の手順](docs/RPG_AUTOMATION.md) と [進捗](docs/AUTOMATION_PROGRESS.md)、Claude Code向けの [手順](docs/CLAUDE_CODE.md) を参照してください。
 
 ## 遊び方
 
@@ -18,6 +18,15 @@ GitHub Pagesの公開設定後に **https://noaaaaa05.github.io/hoshi-rpg-3d/** 
 攻撃ボタンはタップまたは長押し（連続攻撃）、回避ボタンはタップです。PCは **J：攻撃 / K：回避**。スティックを離した状態か前方向に倒した状態で回避すると、約0.72秒の前転をします。
 
 8つの星灯りと、3つの風景「星詠みの石門」「星降りの古木」「旅人の灯り」を探してみてください。達成後も自由に探索できます。
+
+## Ver.0.2.4：集落・持ち物・前転・RPGカタログ
+
+- 野営地のそばに小さな集落（家3軒、屋台2つ）と、商人ルカ・衛兵セナ・村人ミオを追加しました。近づくと「話す」ボタンが出ます。ルカから薬草（20G）を買い、「持ち物」ボタンから使うとHPが30回復します。所持金と薬草は保存されます。
+- 前転回避で、Meshyで生成した専用モーション `Hoshi_roll` を再生します。
+- NPC・会話・クエスト・アイテム・技・エリアを `assets/rpg/catalog.json` に登録して追加できます。最初の例は見張り番ミナのクエストです。開始地点のそばのミナに話しかけ、北東の見張り台を訪ねて報告すると「森番の短剣」と「小径の三連撃」が手に入り、ミナを仲間にできます。PCでは **F：話す / L：技**。
+- カタログへの追加だけのPRは、テスト合格後に自動でマージ・公開されます。手順は [docs/RPG_AUTOMATION.md](docs/RPG_AUTOMATION.md) を参照してください。
+
+集落、NPC、敵、木や岩は、箱や球を組み合わせた仮の表示です。造形とテクスチャのある3Dモデルへ置き換える予定です（[対象の一覧](docs/AUTOMATION_PROGRESS.md)）。
 
 ## Ver.0.2.3：Meshyモーション自動化
 
@@ -71,7 +80,7 @@ GitHub Actionsの **Meshy motions** から、前転・左回避・右回避・�
 - インスタンシング、共有ジオメトリ、影なし、描画解像度制限、自動軽量化、軽量モード。
 - Meshy AIなどのGLBを設定ファイルから追加可能。
 
-上記はVer.0.1から引き継いだ探索機能です。Ver.0.2では戦闘・敵AI・育成を追加しています。装備変更・会話・街のシステムは未実装です。
+上記はVer.0.1から引き継いだ探索機能です。Ver.0.2では戦闘・敵AI・育成を、Ver.0.2.4では会話・クエスト・装備・集落の試作を追加しています。
 
 ## iPhoneだけで公開する
 
@@ -124,6 +133,11 @@ Ver.0.1の基準コミットは `0fe4d51c3fbe74eceb15f3c1c14c48a358431137` で�
 | `js/player.js` | 簡易キャラクターとランタン、歩行アニメーション |
 | `js/models.js`・`js/model-utils.js` | GLB読み込み・検証、足元と向きの調整、6種類のアニメーション切り替え |
 | `assets/models/hero.glb`・`hero-mobile.glb` | Meshy原本とゲーム表示用の軽量版 |
+| `js/motion-library.js`・`js/motion-state.js` | 追加モーションGLBの読み込みと骨格の照合、回避・着地の動作の切り替え |
+| `js/village.js` | 集落の建物・NPC・薬草店 |
+| `js/rpg-content.js`・`js/rpg-progress.js` | カタログの検証と適用、クエスト・持ち物・仲間の進行 |
+| `js/rpg-world.js`・`js/rpg-visuals.js`・`js/rpg-ui.js` | カタログのエリアと配置、モデルの表示、会話とクエストの画面 |
+| `assets/rpg/catalog.json` | NPC・会話・クエスト・アイテム・技などの追加データ |
 | `js/map.js` | ミニマップ |
 | `js/storage.js` | 保存・復帰・保存値の検証 |
 | `assets/models/manifest.json` | GLBの差し替え・配置設定 |
@@ -131,6 +145,8 @@ Ver.0.1の基準コミットは `0fe4d51c3fbe74eceb15f3c1c14c48a358431137` で�
 | `.nojekyll` | GitHub Pagesで静的ファイルをそのまま配信 |
 | `scripts/`、`tests/` | ローカルサーバー、構文検査、自動テスト |
 | `.github/workflows/check.yml` | GitHub Actionsでルールとブラウザ操作を検証 |
+| `.github/workflows/rpg-content-release.yml` | カタログへの追加だけのPRを、検査合格後にマージして公開 |
+| `AGENTS.md`・`CLAUDE.md` | ChatGPTとClaudeが共有する開発ルールと、Claude Code向けの補足 |
 
 ## GLBの追加
 
