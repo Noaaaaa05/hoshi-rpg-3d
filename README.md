@@ -2,6 +2,8 @@
 
 ランタンひとつ、まだ知らない景色へ。iPhoneのSafariで遊べる、オリジナル3D探索アクションRPGです。Three.js / HTML / CSS / JavaScriptで制作しています。
 
+開発をChatGPT Workから進める場合は [RPG自動化の手順](docs/RPG_AUTOMATION.md) と [進捗](docs/AUTOMATION_PROGRESS.md) を参照してください。
+
 ## 遊び方
 
 GitHub Pagesの公開設定後に **https://noaaaaa05.github.io/hoshi-rpg-3d/** をSafariで開き、iPhoneを横向きにして「森を歩きはじめる」を押します。

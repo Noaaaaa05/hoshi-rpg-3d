@@ -1,0 +1,39 @@
+name: RPG content release
+on:
+  workflow_run:
+    workflows: [Game checks]
+    types: [completed]
+permissions: {}
+concurrency:
+  group: rpg-content-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: >-
+      github.repository == 'Noaaaaa05/hoshi-rpg-3d' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'codex/rpg-content-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      actions: read
+      checks: read
+      statuses: read
+      contents: write
+      pull-requests: write
+      pages: write
+    steps:
+      # workflow_run starts from the default branch. Execute the trusted script only.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify and release the allowed catalog addition
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/rpg/release.mjs --workflow

@@ -28,6 +28,10 @@ on:
         description: 'I authorize paid Meshy requests within the selected limit'
         type: boolean
         default: false
+      approval_id:
+        description: Unique approval ID for this exact operation and credit cap
+        type: string
+        default: ''
       resume_run_id:
         description: 'Optional previous run ID to resume saved tasks without recreating them'
         type: string
@@ -66,7 +70,7 @@ jobs:
           path: work/meshy/
           retention-days: 14
   generate:
-    if: inputs.mode == 'generate'
+    if: inputs.mode == 'generate' && github.run_attempt == 1 && github.ref == 'refs/heads/main' && github.actor == github.repository_owner
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     permissions:
@@ -97,6 +101,8 @@ jobs:
         run: npm run meshy:generate
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          MESHY_APPROVAL_ID: ${{ inputs.approval_id }}
+          GITHUB_TOKEN: ${{ github.token }}
           MESHY_ALLOW_PAID: 'YES'
           MESHY_TARGETS: ${{ inputs.targets }}
           MESHY_MOTION_MODE: ${{ inputs.motion_mode }}

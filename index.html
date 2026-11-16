@@ -9,7 +9,7 @@
   <meta name="description" content="星灯りを集めながら、静かな3Dの森を旅する。iPhone Safariで遊べるオリジナル探索アクションRPG。">
   <title>星灯りの森 3D — Ver.0.2.4</title>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=0.2.5">
+  <link rel="stylesheet" href="./style.css?v=0.2.7">
   <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
 </head>
 <body class="intro-active">
@@ -62,6 +62,6 @@
     <section id="error" class="overlay hidden" role="alert"><div class="menu-card"><span class="eyebrow">星灯りの森 3D</span><h2>森を開けませんでした</h2><p id="error-message"></p><button class="primary-button" onclick="location.reload()">もう一度読み込む</button></div></section>
   </main>
   <script>window.addEventListener('error',function(e){if(e.message&&document.getElementById('start-button').disabled){document.getElementById('error-message').textContent='読み込みに失敗しました。ページを再読み込みしてください。'+e.message;document.getElementById('error').classList.remove('hidden');}});</script>
-  <script type="module" src="./js/main.js?v=0.2.6"></script>
+  <script type="module" src="./js/main.js?v=0.2.7"></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+name: Meshy existing task (free)
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Meshy task endpoint
+        type: choice
+        required: true
+        options: [motion, animation, rigging, text-to-3d, image-to-3d]
+      task:
+        description: Existing task UUID
+        type: string
+        required: true
+      download:
+        description: Keep the finished asset for one day
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  retrieve:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve the existing Meshy task
+        env:
+          TASK_KIND: ${{ inputs.kind }}
+          TASK_ID: ${{ inputs.task }}
+          DOWNLOAD: ${{ inputs.download }}
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          set -euo pipefail
+          args=("$TASK_KIND" "$TASK_ID")
+          if [ "$DOWNLOAD" = true ]; then args+=("$RUNNER_TEMP/meshy-existing-task"); fi
+          node scripts/meshy/retrieve-task.mjs "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Store the asset and sanitized task metadata
+        if: inputs.download
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshy-existing-task
+          path: ${{ runner.temp }}/meshy-existing-task/
+          retention-days: 1
+          if-no-files-found: error

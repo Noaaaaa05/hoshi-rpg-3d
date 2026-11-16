@@ -65,7 +65,7 @@ export function createClient(apiKey,{fetchImpl=fetch,sleep=ms=>new Promise(r=>se
   };
 }
 
-export async function runPipeline({root=process.cwd(),config,options={},apiKey='',allowPaid=false,client,outputDir='work/meshy',resume=null}={}) {
+export async function runPipeline({root=process.cwd(),config,options={},apiKey='',allowPaid=false,client,outputDir='work/meshy',resume=null,beforeCharge}={}) {
   const plan=planGeneration(config,options),out=path.resolve(root,outputDir);
   await mkdir(out,{recursive:true});
   const inspection=await Promise.all(['assets/models/hero.glb',config.baseModel].map(file=>inspectFile(path.join(root,file))));
@@ -87,11 +87,13 @@ export async function runPipeline({root=process.cwd(),config,options={},apiKey='
   if(rig.status!=='SUCCEEDED')throw new Error('API rig task is not SUCCEEDED');
   const rigBytes=await client.download(rig.result?.rigged_character_glb_url);
   assertCompatibleRig(await rigProfile(await loadGLB(baseBytes)),await rigProfile(await loadGLB(rigBytes)));
+  let approvalReserved=false;
   async function task(key,endpoint,body,cost){
     let record=state.tasks[key];
     if(record?.uncertain&&!record.id)throw new Error('A POST has an uncertain outcome; reconcile it with Meshy before starting another paid run');
     if(!record){
       if(state.reservedCredits+cost>plan.maxCredits)throw new Error('Credit reservation would exceed the limit');
+      if(beforeCharge&&!approvalReserved){await beforeCharge();approvalReserved=true;}
       state.reservedCredits+=cost;record=state.tasks[key]={endpoint,reserved:cost,uncertain:true};await save();
       const created=await client.request(endpoint,body);
       if(!id(created.result))throw new Error('No valid task ID returned; do not automatically repeat this POST');

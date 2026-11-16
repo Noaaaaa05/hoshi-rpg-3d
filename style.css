@@ -24,3 +24,9 @@
 #inventory-message{font-size:12px;min-height:16px}
 @media(max-height:540px){.inventory-action{width:49px;height:49px}.inventory-panel{bottom:112px;padding:11px;font-size:12px;max-height:calc(100dvh - 120px);overflow:auto}}
 @media(max-width:650px) and (orientation:landscape){.inventory-action{width:45px;height:45px}.inventory-action .action-symbol{font-size:23px}}
+
+#rpg-interact{position:fixed;z-index:15;right:max(22px,env(safe-area-inset-right));top:45%;min-height:44px;padding:6px 18px;border:1px solid #d9c286;border-radius:24px;color:#f2ebd4;background:#12343a;touch-action:manipulation;font:bold 13px system-ui}
+#rpg-dialog{position:fixed;z-index:16;left:50%;bottom:16%;transform:translateX(-50%);width:min(420px,68vw);max-height:65dvh;overflow:auto;padding:16px;border:1px solid #d9c286;border-radius:14px;color:#f2ebd4;background:#102e32f5;font:14px system-ui}
+#rpg-dialog[hidden],#rpg-interact[hidden]{display:none}
+#rpg-dialog button{min-height:44px;margin:3px;padding:6px 12px;border:0;border-radius:8px;color:#173735;background:#d6c28f;font-weight:bold;touch-action:manipulation}
+#rpg-inventory h3{font-size:14px;margin:12px 0 4px}

@@ -38,22 +38,25 @@ export class CombatSystem {
     this.motor=motor;this.grid=grid;this.progression=new Progression(saved);
     motor.hp=this.progression.maxHP;
     this.events=[];this.attackTime=0;this.attackDuration=.52;this.attackHits=new Set();
+    this.attackBonus=0;this.activeSkill=null;this.skillHit=0;
     this.dodgeTime=0;this.dodgeCooldown=0;this.invulnerable=0;this.hurtTime=0;this.aiTime=0;this.time=0;this.targetId=null;
     this.rollMotionAvailable=false;this.dodgeDuration=DODGE_DURATION;this.dodgeType='roll';this.dodgeSerial=0;this.landingTime=0;this.landingSerial=0;
     this.enemies=spawns.map((spawn,id)=>{
-      const config=ENEMY_TYPES[spawn.type],p=grid.resolve(spawn.x,spawn.z,config.radius);
-      return {id,type:spawn.type,...p,y:heightAt(p.x,p.z),homeX:p.x,homeZ:p.z,angle:Math.PI,
+      const config=spawn.config??ENEMY_TYPES[spawn.type],p=grid.resolve(spawn.x,spawn.z,config.radius);
+      return {id,type:spawn.type,config,variant:config.variant??spawn.type,contentActor:spawn.contentActor,
+        contentPlacement:spawn.contentPlacement,...p,y:heightAt(p.x,p.z),homeX:p.x,homeZ:p.z,angle:Math.PI,
         hp:config.hp,maxHP:config.hp,state:'wander',stateTime:0,goalX:p.x,goalZ:p.z,
         wanderTime:id*.29,hurt:0,seed:173+id*97,moving:false,deathTime:0,modelLoaded:false};
     });
   }
   get attacking() { return this.attackTime>0; }
+  get attackPower() { return this.progression.attack+this.attackBonus; }
   get dodging() { return this.dodgeTime>0; }
   get attackPhase() { return this.attacking?1-this.attackTime/this.attackDuration:0; }
   get dodgePhase() { return this.dodging?1-this.dodgeTime/this.dodgeDuration:0; }
   safe(x,z) { return Math.hypot(x-SPAWN.x,z-SPAWN.z)<8; }
   resetPlayer() {
-    this.attackTime=this.dodgeTime=this.dodgeCooldown=this.hurtTime=this.landingTime=0;this.invulnerable=2;this.attackHits.clear();
+    this.attackTime=this.dodgeTime=this.dodgeCooldown=this.hurtTime=this.landingTime=0;this.invulnerable=2;this.attackHits.clear();this.activeSkill=null;
     this.motor.vx=this.motor.vz=0;
     for(const e of this.enemies)if(e.hp>0){e.state='return';e.stateTime=0;}
   }
@@ -70,7 +73,7 @@ export class CombatSystem {
       this.dodgeZ=direction.magnitude>.1?direction.z/direction.magnitude:Math.cos(m.angle);
       this.dodgeDuration=this.dodgeType==='roll'&&this.rollMotionAvailable?ROLL_DURATION:DODGE_DURATION;
       this.dodgeTime=this.dodgeDuration;this.dodgeCooldown=.8;this.invulnerable=Math.max(this.invulnerable,.34);
-      this.attackTime=0;m.stamina-=22;m.regenDelay=.7;this.events.push({type:'dodge'});
+      this.attackTime=0;this.activeSkill=null;m.stamina-=22;m.regenDelay=.7;this.events.push({type:'dodge'});
     }
     const dodging=this.dodging;
     const wasGrounded=m.grounded;
@@ -89,35 +92,50 @@ export class CombatSystem {
       m.speed=rolling?travel/(dt||1):10;m.vx=m.vz=0;m.regenDelay=.7;
       this.dodgeTime=Math.max(0,this.dodgeTime-dt);
     }
-    if((input.attack||input.attackHeld)&&!this.attacking&&!dodging&&m.hp>0){
+    const skill=input.skill&&m.grounded&&m.stamina>=input.skill.stamina?input.skill:null;
+    if((input.attack||input.attackHeld||skill)&&!this.attacking&&!dodging&&m.hp>0){
       if(Math.hypot(input.x,input.y)<.1){
         let nearest=null,best=2.8;
         for(const e of this.enemies){const dx=e.x-m.x,dz=e.z-m.z,d=Math.hypot(dx,dz);if(e.hp>0&&d<best&&(dx*Math.sin(m.angle)+dz*Math.cos(m.angle))/(d||1)>.1){nearest=e;best=d;}}
         if(nearest)m.angle=Math.atan2(nearest.x-m.x,nearest.z-m.z);
       }
-      this.attackTime=this.attackDuration;this.attackHits.clear();this.events.push({type:'swing'});
+      this.activeSkill=skill;this.skillHit=0;
+      this.attackDuration=skill?.duration??.52;this.attackTime=this.attackDuration;this.attackHits.clear();
+      if(skill) { m.stamina-=skill.stamina;m.regenDelay=.7; }
+      this.events.push(skill?{type:'skill',name:skill.name}:{type:'swing'});
     }
     if(this.attacking){
       const previous=this.attackPhase;
       this.attackTime=Math.max(0,this.attackTime-dt);
       const phase=1-this.attackTime/this.attackDuration;
-      if(phase>=.24&&previous<=.57)for(const e of this.enemies){
-        if(e.hp<=0||this.attackHits.has(e.id))continue;
-        const dx=e.x-m.x,dz=e.z-m.z,d=Math.hypot(dx,dz),facing=(dx*Math.sin(m.angle)+dz*Math.cos(m.angle))/(d||1);
-        if(d<2.1+ENEMY_TYPES[e.type].radius&&facing>Math.cos(1.15)&&Math.abs(e.y-m.y)<1.65&&this.lineClear(m.x,m.z,e.x,e.z)){
-          this.attackHits.add(e.id);this.targetId=e.id;e.hp=Math.max(0,e.hp-this.progression.attack);e.hurt=.24;
-          this.events.push({type:'hit',id:e.id,damage:this.progression.attack});
-          if(e.hp===0){
-            e.state='dead';e.stateTime=0;e.deathTime=0;e.moving=false;this.progression.kills++;
-            const xp=ENEMY_TYPES[e.type].xp,levels=this.progression.gain(xp);
-            this.events.push({type:'kill',id:e.id,xp});
-            if(levels){m.hp=this.progression.maxHP;this.events.push({type:'levelup',level:this.progression.level});}
-          }else{e.state='recover';e.stateTime=.33;}
+      if(this.activeSkill){
+        const skill=this.activeSkill;
+        while(this.skillHit<skill.hits.length&&phase>=skill.hits[this.skillHit]){
+          this.skillHit++;
+          this.attackHits.clear();
+          this.strikeEnemies(Math.max(1,Math.round(this.attackPower*skill.power)));
         }
-      }
+      }else if(phase>=.24&&previous<=.57) this.strikeEnemies(this.attackPower);
+      if(!this.attacking)this.activeSkill=null;
     }
     this.aiTime+=dt;
     if(this.aiTime>=.05){const aiDt=this.aiTime;this.aiTime=0;for(const e of this.enemies)this.updateEnemy(e,aiDt);}
+  }
+  strikeEnemies(damage) {
+    const m=this.motor;
+    for(const e of this.enemies){
+      if(e.hp<=0||this.attackHits.has(e.id))continue;
+      const dx=e.x-m.x,dz=e.z-m.z,d=Math.hypot(dx,dz),facing=(dx*Math.sin(m.angle)+dz*Math.cos(m.angle))/(d||1);
+      if(d>=2.1+e.config.radius||facing<=Math.cos(1.15)||Math.abs(e.y-m.y)>=1.65||!this.lineClear(m.x,m.z,e.x,e.z))continue;
+      this.attackHits.add(e.id);this.targetId=e.id;e.hp=Math.max(0,e.hp-damage);e.hurt=.24;
+      this.events.push({type:'hit',id:e.id,damage});
+      if(e.hp===0){
+        e.state='dead';e.stateTime=0;e.deathTime=0;e.moving=false;this.progression.kills++;
+        const xp=e.config.xp,levels=this.progression.gain(xp);
+        this.events.push({type:'kill',id:e.id,xp});
+        if(levels){m.hp=this.progression.maxHP;this.events.push({type:'levelup',level:this.progression.level});}
+      }else{e.state='recover';e.stateTime=.33;}
+    }
   }
   lineClear(ax,az,bx,bz) {
     const distance=Math.hypot(bx-ax,bz-az),steps=Math.max(1,Math.ceil(distance/.3));
@@ -129,7 +147,7 @@ export class CombatSystem {
   }
   random(e) { e.seed=(e.seed*1664525+1013904223)>>>0;return e.seed/4294967296; }
   moveEnemy(e,tx,tz,speed,dt) {
-    const config=ENEMY_TYPES[e.type],dx=tx-e.x,dz=tz-e.z,d=Math.hypot(dx,dz);if(d<.18){e.moving=false;return;}
+    const config=e.config,dx=tx-e.x,dz=tz-e.z,d=Math.hypot(dx,dz);if(d<.18){e.moving=false;return;}
     const step=Math.min(speed*dt,d),angle=Math.atan2(dx,dz),oldX=e.x,oldZ=e.z;
     let p=this.grid.resolve(e.x+Math.sin(angle)*step,e.z+Math.cos(angle)*step,config.radius);
     if(Math.hypot(p.x-e.x,p.z-e.z)<step*.3){
@@ -141,7 +159,7 @@ export class CombatSystem {
     if(e.moving)e.angle=Math.atan2(e.x-oldX,e.z-oldZ);
   }
   updateEnemy(e,dt) {
-    const m=this.motor,c=ENEMY_TYPES[e.type];e.hurt=Math.max(0,e.hurt-dt);
+    const m=this.motor,c=e.config;e.hurt=Math.max(0,e.hurt-dt);
     if(e.state==='dead'){
       e.deathTime+=dt;
       if(e.deathTime>30&&Math.hypot(m.x-e.homeX,m.z-e.homeZ)>12){e.hp=e.maxHP;e.x=e.homeX;e.z=e.homeZ;e.y=heightAt(e.x,e.z);e.state='wander';e.stateTime=0;e.wanderTime=0;}

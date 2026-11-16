@@ -1,5 +1,6 @@
 import { register } from 'node:module';
 import { readFile } from 'node:fs/promises';
+import { approvalReservation } from './approval-lock.mjs';
 // Resolve the exact vendored Three.js, without adding runtime CDN dependencies.
 register('../../tests/three-loader.mjs',import.meta.url);
 const {runPipeline}=await import('./pipeline.mjs');
@@ -17,7 +18,9 @@ try{
   }
   if(!resume&&process.env.MESHY_RESUME_STATE)resume=process.env.MESHY_RESUME_STATE;
   const config=JSON.parse(await readFile('config/meshy-motions.json','utf8'));
-  const report=await runPipeline({config,options,resume,apiKey:process.env.MESHY_API_KEY,allowPaid:process.env.MESHY_ALLOW_PAID==='YES'});
+  const allowPaid=process.env.MESHY_ALLOW_PAID==='YES';
+  const beforeCharge=options.execute&&allowPaid?approvalReservation(process.env):undefined;
+  const report=await runPipeline({config,options,resume,apiKey:process.env.MESHY_API_KEY,allowPaid,beforeCharge});
   // Print only our allowlisted report, never requests, keys or signed URLs.
   console.log(JSON.stringify(report,null,2));
 }catch(error){console.error(`Meshy pipeline stopped: ${error.message}`);process.exitCode=1;}
