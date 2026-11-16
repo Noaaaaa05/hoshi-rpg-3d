@@ -1,0 +1,29 @@
+name: Meshy forward roll - ONE SHOT (3 credits)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type APPROVE-ONE-FORWARD-ROLL-3-CREDITS (one paid task, no reruns)'
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: meshy-forward-roll-one-shot
+  cancel-in-progress: false
+jobs:
+  generate:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'APPROVE-ONE-FORWARD-ROLL-3-CREDITS'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CONFIRM: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: One-time preflight, lock, and single Swift generation
+        run: node scripts/meshy/generate-one-forward-roll.mjs
