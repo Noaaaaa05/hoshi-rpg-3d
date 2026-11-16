@@ -46,7 +46,10 @@ test('authored sword strike stays at natural speed and the weapon follows the ha
   const sword=gltf.scene.getObjectByName('HeroSword'),motor={speed:0,dashing:false,grounded:true},combat={attacking:true,attackDuration:.52,attackPhase:0};
   const start=new THREE.Vector3(),end=new THREE.Vector3();
   animator.update(0,motor,combat);grounding.update();sword.getWorldPosition(start);
-  for(let i=0;i<20;i++){combat.attackPhase=i/31;animator.update(1/60,motor,combat);grounding.update();}
+  for(let i=0;i<20;i++){
+    combat.attackPhase=i/31;animator.update(1/60,motor,combat);grounding.update();
+    assert.ok(sword.localToWorld(new THREE.Vector3(0,.86,0)).y>-.08,'blade should swing above the ground');
+  }
   sword.getWorldPosition(end);assert.ok(start.distanceTo(end)>.2);
   assert.ok(Math.abs(animator.getStatus().durations.attack-.52)<.0001);
   assert.ok(Math.abs(gltf.animations.find(c=>c.name==='Attack').duration-2.8)<.001);

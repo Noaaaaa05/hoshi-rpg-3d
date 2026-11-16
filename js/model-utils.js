@@ -162,7 +162,7 @@ export function attachSword(root,spec) {
   if(!bone)throw new Error('剣を取り付ける手のボーンがありません');
   const sword=new THREE.Group();sword.name='HeroSword';
   sword.position.fromArray(spec.position||[0,.06,0]);
-  const direction=new THREE.Vector3().fromArray(spec.direction||[.10009,.83408,-.54249]).normalize();
+  const direction=new THREE.Vector3().fromArray(spec.direction||[1,0,0]).normalize();
   sword.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction);
   const metal=new THREE.MeshStandardMaterial({color:'#d9e2d8',metalness:.35,roughness:.55});
   const grip=new THREE.MeshStandardMaterial({color:'#776346',roughness:1});
