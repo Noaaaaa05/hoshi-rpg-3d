@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
 import { createVillage } from './village.js';
-import { createPlayer } from './player.js?v=0.2.5';
+import { createPlayer } from './player.js?v=0.2.6';
 import { PlayerMotor, heightAt, clamp } from './physics.js';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
-import { loadModels } from './models.js?v=0.2.3';
+import { loadModels } from './models.js?v=0.2.6';
 import { loadSave, writeSave } from './storage.js?v=0.2.0';
 import { CombatSystem, ENEMY_TYPES } from './combat.js?v=0.2.3';
 import { createMonsters } from './monsters.js?v=0.2.0';
