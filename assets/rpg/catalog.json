@@ -107,8 +107,8 @@
     "watchpost-lamp": {
       "zone": "watchpost",
       "model": "watchpost-beacon",
-      "x": 5.9,
-      "z": 5.2,
+      "x": 5.6,
+      "z": 4.1,
       "collider": 0.45
     },
     "watchpost-shelter": {
@@ -116,7 +116,10 @@
       "model": "watchpost-hut",
       "x": 6.5,
       "z": 6.2,
-      "collider": 1.5
+      "colliderBox": [
+        1.61,
+        1.19
+      ]
     }
   },
   "dialogues": {

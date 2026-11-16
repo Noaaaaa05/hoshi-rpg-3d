@@ -1,4 +1,4 @@
-import { clamp, WORLD_RADIUS } from './physics.js';
+import { clamp, WORLD_RADIUS } from './physics.js?v=0.2.8';
 import { normalizeProgression, maxHPForLevel } from './combat.js?v=0.2.7';
 // Keep the same key so v0.1 exploration saves migrate without losing progress.
 const KEY = 'hoshi-rpg-3d:v0.1';

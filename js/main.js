@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createWorld, LANDMARKS } from './world.js';
 import { createVillage } from './village.js';
 import { createPlayer } from './player.js?v=0.2.5';
-import { PlayerMotor, heightAt, clamp } from './physics.js';
+import { PlayerMotor, heightAt, clamp, insideCollider } from './physics.js?v=0.2.8';
 import { Input } from './input.js?v=0.2.0';
 import { createMap } from './map.js';
 import { loadModels } from './models.js?v=0.2.6';
@@ -148,14 +148,26 @@ async function init() {
       const x=THREE.MathUtils.lerp(target.x,desired.x,t),z=THREE.MathUtils.lerp(target.z,desired.z,t),y=THREE.MathUtils.lerp(target.y,desired.y,t);
       let blocked=false;
       for(const c of world.grid.query(x,z,4)){
+        if(c.shape==='box')continue;
         const base=heightAt(c.x,c.z),radius=c.cameraRadius&&y>base+c.canopyBottom?c.cameraRadius:c.radius;
         if(Math.hypot(x-c.x,z-c.z)<radius+.28&&y<base+c.height+.3){blocked=true;break;}
       }
       if(blocked){desired.lerpVectors(target,desired,Math.max(.15,t-.09));break;}
     }
+    // Buildings: stop the view in front of the first wall, however close it stands behind the hero.
+    const walls=[];
+    for(const c of world.grid.query(target.x,target.z,distance+1))if(c.shape==='box')walls.push(c);
+    const inWall=(x,y,z,margin)=>walls.some(c=>y<heightAt(c.x,c.z)+c.height+.3&&insideCollider(c,x,z,margin));
+    if(walls.length)for(let t=.0125;t<=1;t+=.0125) {
+      if(!inWall(THREE.MathUtils.lerp(target.x,desired.x,t),THREE.MathUtils.lerp(target.y,desired.y,t),THREE.MathUtils.lerp(target.z,desired.z,t),.28))continue;
+      desired.lerpVectors(target,desired,t-.0125);break;
+    }
     desired.y=Math.max(desired.y,heightAt(desired.x,desired.z)+.65);
     const follow=snap?1:1-Math.exp(-9*dt);camera.position.lerp(desired,follow);lookAt.lerp(target,snap?1:1-Math.exp(-12*dt));
+    if(inWall(camera.position.x,camera.position.y,camera.position.z,.2))camera.position.copy(desired);
     camera.position.y=Math.max(camera.position.y,heightAt(camera.position.x,camera.position.z)+.5);camera.lookAt(lookAt);
+    // With a wall right behind, the view sits at the hero's shoulder. Hide the hero instead of looking through the model.
+    player.group.visible=camera.position.distanceTo(target)>.9;
   }
   function updateHUD() {
     const hp=Math.round(motor.hp),st=Math.round(motor.stamina);

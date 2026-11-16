@@ -1,6 +1,6 @@
 // Checks that the schema cannot express: content that validates but cannot be played as authored.
 // Errors stop `rpg:check` and `rpg:apply`. Warnings are reported and left to the author.
-import { SPAWN } from '../../js/physics.js';
+import { SPAWN, insideCollider } from '../../js/physics.js';
 import { STAR_POSITIONS } from '../../js/world.js';
 
 // Distances used by the game. Keep them in step with the files named here.
@@ -56,9 +56,13 @@ export function lintCatalog(catalog) {
   const errors = [], warnings = [];
   const placements = Object.entries(catalog.placements), zones = Object.entries(catalog.zones);
   const placedActors = new Set(placements.map(([, placement]) => placement.actor).filter(id => id !== undefined));
-  const props = placements.filter(([, placement]) => placement.collider);
+  // The same collider that js/rpg-world.js adds to the grid for each prop.
+  const props = placements.filter(([, placement]) => placement.collider || placement.colliderBox).map(([id, placement]) =>
+    [id, placement.colliderBox
+      ? { x: placement.x, z: placement.z, shape: 'box', halfX: placement.colliderBox[0], halfZ: placement.colliderBox[1], angle: placement.yaw ?? 0 }
+      : { x: placement.x, z: placement.z, radius: placement.collider }]);
   const talkers = placements.filter(([, placement]) => catalog.actors[placement.actor]?.dialogue);
-  const free = (x, z) => props.every(([, prop]) => Math.hypot(x - prop.x, z - prop.z) >= prop.collider + PLAYER_RADIUS);
+  const free = (x, z) => props.every(([, prop]) => !insideCollider(prop, x, z, PLAYER_RADIUS));
 
   // Dialogues are spoken by placed NPCs and companions. Everything a quest needs must be reachable through them.
   const spoken = new Map();
@@ -114,13 +118,13 @@ export function lintCatalog(catalog) {
 
   for (const [id, placement] of placements) {
     const at = 'placements.' + id + ': ';
-    if (placement.collider && Math.hypot(placement.x - SPAWN.x, placement.z - SPAWN.z) < placement.collider + PLAYER_RADIUS) {
+    if (props.some(([prop, collider]) => prop === id && insideCollider(collider, SPAWN.x, SPAWN.z, PLAYER_RADIUS))) {
       warnings.push(at + 'the collider covers the player start');
     }
     // Props may overlap each other, and enemies are pushed out of colliders when they spawn.
     if (placement.actor === undefined || catalog.actors[placement.actor].role === 'enemy') continue;
     for (const [other, prop] of props) {
-      if (Math.hypot(placement.x - prop.x, placement.z - prop.z) < prop.collider) {
+      if (insideCollider(prop, placement.x, placement.z)) {
         warnings.push(at + 'the character stands inside the collider of ' + other);
       }
     }

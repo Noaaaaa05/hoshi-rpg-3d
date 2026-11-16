@@ -9,8 +9,8 @@
     {"op":"add","type":"zones","id":"trail-rest","value":{"name":"はじまりの休憩所","kind":"village","x":3.2,"z":12,"radius":3.5}},
     {"op":"add","type":"zones","id":"watchpost","value":{"name":"木漏れ日の見張り台","kind":"forest","x":4.8,"z":5.5,"radius":2.5}},
     {"op":"add","type":"placements","id":"mina-trail","value":{"zone":"trail-rest","actor":"mina","x":2.6,"z":11.6,"yaw":-1.57}},
-    {"op":"add","type":"placements","id":"watchpost-lamp","value":{"zone":"watchpost","model":"watchpost-beacon","x":5.9,"z":5.2,"collider":0.45}},
-    {"op":"add","type":"placements","id":"watchpost-shelter","value":{"zone":"watchpost","model":"watchpost-hut","x":6.5,"z":6.2,"collider":1.5}},
+    {"op":"add","type":"placements","id":"watchpost-lamp","value":{"zone":"watchpost","model":"watchpost-beacon","x":5.6,"z":4.1,"collider":0.45}},
+    {"op":"add","type":"placements","id":"watchpost-shelter","value":{"zone":"watchpost","model":"watchpost-hut","x":6.5,"z":6.2,"colliderBox":[1.61,1.19]}},
     {"op":"add","type":"items","id":"watchpost-dagger","value":{"name":"森番の短剣","kind":"weapon","attackBonus":3}},
     {"op":"add","type":"quests","id":"watchpost-round","value":{
       "name":"見張り台の見回り",

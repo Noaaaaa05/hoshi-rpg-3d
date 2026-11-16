@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { heightAt } from './physics.js';
+import { heightAt } from './physics.js?v=0.2.8';
 import { prepareModel, createPlayerAnimator, createFootGrounding, attachSword } from './model-utils.js?v=0.2.6';
 import { loadMotionLibrary } from './motion-library.js?v=0.2.6';
 

@@ -1,4 +1,4 @@
-import { clamp } from './physics.js';
+import { clamp } from './physics.js?v=0.2.8';
 
 export class Input {
   constructor() {
