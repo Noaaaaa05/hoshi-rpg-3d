@@ -6,6 +6,10 @@ export const LANDMARKS = [
   { id:'tree', name:'星降りの古木', x:42, z:-50, radius:10 },
   { id:'camp', name:'旅人の灯り', x:-42, z:25, radius:9 }
 ];
+// Keep procedural scenery out of the settlement footprint.
+export function inVillageClearing(x,z,margin=0) {
+  return (x>-52-margin&&x<-26+margin&&z>19-margin&&z<42+margin);
+}
 export const STAR_POSITIONS = [
   [1,3],[-6,-13],[0,-32],[21,-39],[42,-48],[-20,21],[-42,23],[33,24]
 ];
@@ -50,7 +54,7 @@ export function createWorld(scene) {
   const trees=[];
   for(let i=0;i<340;i++) {
     const angle=random()*Math.PI*2,r=Math.sqrt(random())*120,x=Math.cos(angle)*r,z=Math.sin(angle)*r;
-    if(pathDistance(x,z)<4.7 || Math.hypot(x-SPAWN.x,z-SPAWN.z)<7 || LANDMARKS.some(l=>Math.hypot(x-l.x,z-l.z)<l.radius*.8) || STAR_POSITIONS.some(s=>Math.hypot(x-s[0],z-s[1])<2.4)) continue;
+    if(inVillageClearing(x,z,4) || pathDistance(x,z)<4.7 || Math.hypot(x-SPAWN.x,z-SPAWN.z)<7 || LANDMARKS.some(l=>Math.hypot(x-l.x,z-l.z)<l.radius*.8) || STAR_POSITIONS.some(s=>Math.hypot(x-s[0],z-s[1])<2.4)) continue;
     trees.push({x,z,y:heightAt(x,z),s:1+random()*.85,deciduous:random()>.66,rotation:random()*6});
   }
   trees.push(...[[-8,6],[9,1],[-11,-10],[12,-19],[-13,-33],[14,15]].map(([x,z])=>({x,z,y:heightAt(x,z),s:1.35,deciduous:false,rotation:0})));
@@ -65,7 +69,7 @@ export function createWorld(scene) {
   const rocks=[];
   for(let i=0;i<100;i++) {
     const x=(random()-.5)*214,z=(random()-.5)*214,s=.4+random()*1.4;
-    if(pathDistance(x,z)<4.3 || LANDMARKS.some(l=>Math.hypot(x-l.x,z-l.z)<l.radius) || STAR_POSITIONS.some(p=>Math.hypot(x-p[0],z-p[1])<2.5))continue;
+    if(inVillageClearing(x,z,3) || pathDistance(x,z)<4.3 || LANDMARKS.some(l=>Math.hypot(x-l.x,z-l.z)<l.radius) || STAR_POSITIONS.some(p=>Math.hypot(x-p[0],z-p[1])<2.5))continue;
     rocks.push({x,z,y:heightAt(x,z)+s*.3,sx:s,sy:s*.7,sz:s*.8,ry:random()*6}); grid.add({x,z,radius:s*.88,height:s*1.3});
   }
   instance(new THREE.DodecahedronGeometry(1,0),stone,rocks);
@@ -75,7 +79,7 @@ export function createWorld(scene) {
   const grasses=[],flowers=[];
   for(let i=0;i<6500;i++) {
     const x=(random()-.5)*185,z=(random()-.5)*185;
-    if(pathDistance(x,z)<3.2)continue;
+    if(inVillageClearing(x,z,1) || pathDistance(x,z)<3.2)continue;
     const s=.35+random()*.7;
     grasses.push({x,y:heightAt(x,z)-.01,z,sx:s,sy:s,sz:s,ry:random()*6,color:random()>.65?'#8da478':'#6e976c'});
     if(i%28===0) flowers.push({x,y:heightAt(x,z)+.24,z,sx:.08,sy:.13,sz:.08,color:random()>.4?'#e7d5a0':'#9bc1d0'});

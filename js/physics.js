@@ -38,6 +38,24 @@ export class CollisionGrid {
     for (let pass = 0; pass < 4; pass++) {
       for (const c of this.query(x, z, radius)) {
         const dx = x - c.x, dz = z - c.z;
+        if (c.shape === 'box') {
+          const qx = Math.max(c.x - c.halfX, Math.min(x, c.x + c.halfX));
+          const qz = Math.max(c.z - c.halfZ, Math.min(z, c.z + c.halfZ));
+          const bx = x - qx, bz = z - qz, bd = Math.hypot(bx, bz);
+          if (bd < radius) {
+            if (bd > .00001) { x += bx / bd * (radius - bd); z += bz / bd * (radius - bd); }
+            else {
+              const left = Math.abs(x - (c.x - c.halfX)), right = Math.abs(c.x + c.halfX - x);
+              const near = Math.abs(z - (c.z - c.halfZ)), far = Math.abs(c.z + c.halfZ - z);
+              const edge = Math.min(left, right, near, far);
+              if (edge === left) x = c.x - c.halfX - radius;
+              else if (edge === right) x = c.x + c.halfX + radius;
+              else if (edge === near) z = c.z - c.halfZ - radius;
+              else z = c.z + c.halfZ + radius;
+            }
+          }
+          continue;
+        }
         const distance = Math.hypot(dx, dz), min = radius + c.radius;
         if (distance < min) {
           if (distance < .00001) { x += min; } else { x += dx / distance * (min - distance); z += dz / distance * (min - distance); }

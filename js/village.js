@@ -9,13 +9,18 @@ export function createVillage(scene, grid) {
   const mesh=(g,m,x,y,z,parent=root)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);parent.add(o);return o;};
   // Put the market beside the existing campsite landmark, keeping the main path clear.
   const spots=[[-33,31],[-39,36],[-47,36]];
-  // Physics uses circular colliders; approximate each rectangular building with two circles.
-  // Foundation skirts cover sloped terrain instead of leaving floating walls.
+  // Exact box footprint collisions and terrain-following corner supports.
   for(const [x,z] of spots) {
     const y=heightAt(x,z);
-    mesh(new THREE.BoxGeometry(5,2.4,4),wood,x,y-.85,z);
+    mesh(new THREE.BoxGeometry(5.1,.22,4.1),wood,x,y+.08,z);
+    for (const dx of [-2.25,2.25]) for (const dz of [-1.75,1.75]) {
+      const ground=heightAt(x+dx,z+dz);
+      const bottom=Math.min(y-.12,ground-.12);
+      const top=y+.18;
+      mesh(new THREE.BoxGeometry(.42,top-bottom,.42),wood,x+dx,(top+bottom)/2,z+dz);
+    }
     mesh(new THREE.BoxGeometry(5,3.1,4),wall,x,y+1.55,z);
-    for(const dx of [-1.05,1.05])grid.add({x:x+dx,z,radius:1.95,height:5.5});
+    grid.add({x,z,radius:3.3,shape:'box',halfX:2.5,halfZ:2,height:5.5});
     const r=mesh(new THREE.ConeGeometry(4.25,2.25,4),roof,x,y+4.2,z);r.rotation.y=Math.PI/4;
     mesh(new THREE.BoxGeometry(1.2,1.8,.13),wood,x,y+.9,z-2.08);
   }
@@ -23,7 +28,7 @@ export function createVillage(scene, grid) {
   for(const {x,z} of stalls) {
     const y=heightAt(x,z);
     mesh(new THREE.BoxGeometry(2.7,1.55,1.3),wood,x,y+.42,z);
-    grid.add({x,z,radius:1.45,height:3.1});
+    grid.add({x,z,radius:1.55,shape:'box',halfX:1.35,halfZ:.65,height:3.1});
     for(const dx of [-1.15,1.15])mesh(new THREE.CylinderGeometry(.09,.09,2.5,6),wood,x+dx,y+1.75,z);
     const awning=mesh(new THREE.BoxGeometry(3.1,.18,1.8),roof,x,y+2.9,z);awning.rotation.z=.06;
     for(let i=0;i<3;i++)mesh(new THREE.IcosahedronGeometry(.24,0),gold,x-.7+i*.7,y+1.3,z);
