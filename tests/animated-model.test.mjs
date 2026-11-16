@@ -55,3 +55,17 @@ test('authored sword strike stays at natural speed and the weapon follows the ha
   assert.ok(Math.abs(gltf.animations.find(c=>c.name==='Attack').duration-2.8)<.001);
   const before=animator.getStatus().time;animator.update(0,motor,combat);grounding.update();assert.equal(animator.getStatus().time,before);
 });
+test('rapid input changes and held attacks retain normalized blend weights',async()=>{
+  const {gltf,animator,grounding}=await character(),motor={speed:0,dashing:false,grounded:true},combat={attacking:false,dodging:false,attackDuration:.52,attackPhase:0};
+  for(let i=0;i<40;i++){
+    motor.speed=i%3?4.1:0;motor.dashing=i%3===2;
+    animator.update(1/60,motor,combat);grounding.update();
+    assert.ok(Math.abs(Object.values(animator.getStatus().weights).reduce((a,b)=>a+b,0)-1)<1e-5);
+  }
+  combat.attacking=true;motor.speed=0;motor.dashing=false;
+  const hand=gltf.scene.getObjectByName('mixamorigRightHand');
+  for(let i=0;i<31;i++){combat.attackPhase=i/31;animator.update(1/60,motor,combat);grounding.update();}
+  const before=hand.quaternion.clone();combat.attackPhase=0;
+  animator.update(1/60,motor,combat);grounding.update();
+  assert.ok(before.angleTo(hand.quaternion)<.8,'a repeated strike should blend rather than snap back');
+});

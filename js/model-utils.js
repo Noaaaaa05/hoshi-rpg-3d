@@ -72,29 +72,39 @@ export function createPlayerAnimator(root, clips = [], mapping = {}, options = {
     actions[state].setEffectiveWeight(0);
     if (['attack','jump','dodge'].includes(state)) {actions[state].setLoop(THREE.LoopOnce,1);actions[state].clampWhenFinished=true;}
   }
+  const slots={...actions};
+  if(resolved.attack){
+    const alternate=mixer.clipAction(resolved.attack.clone());alternate.setEffectiveWeight(0).setLoop(THREE.LoopOnce,1);alternate.clampWhenFinished=true;
+    slots.attackAlternate=alternate;
+  }
+  const attackSlots=[actions.attack,slots.attackAlternate].filter(Boolean);
   const fade=Number.isFinite(options.fadeDuration)?Math.max(.01,options.fadeDuration):.16;
-  let active=null,state=null,previousAttackPhase=0,fadeTime=fade,startWeights={};
+  let active=null,state=null,previousAttackPhase=0,fadeTime=fade,fadeLength=fade,startWeights={};
   return {
     get state() { return state; },
     clips:Object.fromEntries(Object.entries(resolved).map(([state,clip])=>[state,clip.name])),
     getStatus() { return {state,clip:active?.getClip().name||null,time:active?.time||0,mixerTime:mixer.time,
-      weights:Object.fromEntries(Object.entries(actions).map(([key,action])=>[key,action.getEffectiveWeight()])),
+      weights:Object.fromEntries(Object.entries(actions).map(([key,action])=>[key,action.getEffectiveWeight()+(key==='attack'?(slots.attackAlternate?.getEffectiveWeight()||0):0)])),
       durations:Object.fromEntries(Object.entries(resolved).map(([key,clip])=>[key,clip.duration]))}; },
     update(dt,motor,combat) {
       const movement=motor.speed>.2?(motor.dashing?'run':'walk'):'idle';
       state=combat?.dodging?'dodge':combat?.attacking?'attack':!motor.grounded?'jump':movement;
-      const action=actions[state] || (state==='run'?actions.walk:null) || actions.idle || null;
-      const repeatAttack=state==='attack' && action===actions.attack && combat.attackPhase<previousAttackPhase;
+      let action=actions[state] || (state==='run'?actions.walk:null) || actions.idle || null;
+      const repeatAttack=state==='attack' && actions.attack && attackSlots.includes(active) && combat.attackPhase<previousAttackPhase;
+      if(state==='attack'&&actions.attack&&attackSlots.includes(active))action=repeatAttack?attackSlots.find(a=>a!==active):active;
       if (action!==active || repeatAttack) {
         const initial=!active;
-        if(action!==active){startWeights=Object.fromEntries(Object.entries(actions).map(([key,a])=>[key,a.getEffectiveWeight()]));fadeTime=initial?fade:0;}
+        if(action!==active){
+          startWeights=Object.fromEntries(Object.entries(slots).map(([key,a])=>[key,a.getEffectiveWeight()]));
+          fadeLength=repeatAttack?Math.min(.08,fade):fade;fadeTime=initial?fadeLength:0;
+        }
         if(action && (repeatAttack || !action.isRunning() || action.getEffectiveWeight()<.001))action.reset().play();
         active=action;
-        if (state==='attack' && action===actions.attack) action.setEffectiveTimeScale(resolved.attack.duration/(combat.attackDuration || .52));
+        if (state==='attack' && attackSlots.includes(action)) action.setEffectiveTimeScale(resolved.attack.duration/(combat.attackDuration || .52));
       }
-      fadeTime=Math.min(fade,fadeTime+Math.max(0,dt));
-      const blend=fadeTime/fade;
-      for(const [key,a] of Object.entries(actions)){
+      fadeTime=Math.min(fadeLength,fadeTime+Math.max(0,dt));
+      const blend=fadeTime/fadeLength;
+      for(const [key,a] of Object.entries(slots)){
         a.setEffectiveWeight((startWeights[key]||0)*(1-blend)+(a===active?blend:0));
         if(blend===1&&a!==active&&a.isRunning())a.stop();
       }
