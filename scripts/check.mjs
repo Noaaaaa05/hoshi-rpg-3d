@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { conflictingImports } from './module-versions.mjs';
 const files=(await readdir('js')).filter(p=>p.endsWith('.js')).map(p=>'js/'+p);
 files.push('scripts/serve.mjs','scripts/check.mjs','scripts/module-versions.mjs');
-for (const directory of ['scripts/meshy', 'scripts/rpg']) {
+for (const directory of ['scripts/meshy', 'scripts/rpg', 'scripts/assets']) {
   files.push(...(await readdir(directory)).filter(p => p.endsWith('.mjs')).map(p => directory + '/' + p));
 }
 for(const file of files){const r=spawnSync(process.execPath,['--check',file],{stdio:'inherit'});if(r.status!==0)process.exit(r.status||1);}

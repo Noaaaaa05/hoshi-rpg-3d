@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { circleIntersectsBox } from '../helpers/circle-box.mjs';
 
 // Wall footprints: a village house (js/village.js) and the watchpost hut (assets/rpg/catalog.json).
 const house = {x: -33, z: 31, halfX: 2.5, halfZ: 2}, hut = {x: 6.5, z: 6.2, halfX: 1.61, halfZ: 1.19};
@@ -23,7 +24,7 @@ for (const [name, start, keys, box] of [
   await page.waitForTimeout(700);
   for (const key of keys) await page.keyboard.up(key);
   await expect.poll(async () => (await view()).player.speed, {timeout: 10000}).toBeLessThan(.05);
-  expect(inside((await view()).player, box, .37)).toBe(false);
+  expect(circleIntersectsBox((await view()).player, box, .37)).toBe(false);
   await expect.poll(async () => inside((await view()).camera, box, .1), {timeout: 10000}).toBe(false);
   expect(errors).toEqual([]);
 });

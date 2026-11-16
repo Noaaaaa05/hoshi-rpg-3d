@@ -1,0 +1,74 @@
+name: Asset models (explicit approval)
+on:
+  workflow_dispatch:
+    inputs:
+      bundle:
+        description: 'Rights-cleared bundle under production/approved/ (catalog + crops + review + approval). Unknown sources must never be committed.'
+        type: string
+        default: ''
+      confirm_paid:
+        description: 'Owner has approved exact Image-to-3D asset IDs, request count and maximum credits'
+        type: boolean
+        default: false
+      approval_id:
+        description: 'Unique approval reservation ID'
+        type: string
+        default: ''
+      resume_run_id:
+        description: 'Optional prior run ID: reuse saved task IDs with GET-only recovery'
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: bulk-asset-model-production
+  cancel-in-progress: false
+jobs:
+  models:
+    if: inputs.confirm_paid && github.actor == github.repository_owner && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require an approved local bundle (no external downloads)
+        env:
+          BUNDLE: ${{ inputs.bundle }}
+        run: |
+          node --input-type=module -e "import path from 'node:path';import {realpath} from 'node:fs/promises';const base=await realpath('production/approved');const bundle=await realpath(process.env.BUNDLE);if(!bundle.startsWith(base+path.sep))throw Error('Approved bundle path required');"
+      - name: Confirm the reviewed bundle's approval document
+        # Resuming never submits a missing task. A new subset needs new approval.
+        env:
+          BUNDLE: ${{ inputs.bundle }}
+        run: test -f "$BUNDLE/approval.json"
+      - uses: actions/download-artifact@v4
+        if: inputs.resume_run_id != ''
+        with:
+          name: approved-asset-models
+          path: work/asset-models-resume
+          run-id: ${{ inputs.resume_run_id }}
+          github-token: ${{ github.token }}
+      - name: Execute the approved operation or recover existing task IDs
+        env:
+          BUNDLE: ${{ inputs.bundle }}
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          MESHY_APPROVAL_ID: ${{ inputs.approval_id }}
+          ASSET_PAID_CONFIRM: 'YES'
+          ASSET_PUBLIC_ARTIFACTS: 'YES'
+          ASSET_RESUME_STATE: ${{ inputs.resume_run_id != '' && 'work/asset-models-resume/state.json' || '' }}
+        run: node scripts/assets/generate.mjs "$BUNDLE" "$BUNDLE/review.json" "$BUNDLE/approval.json" work/asset-models
+      - name: Upload only results whose source permits 3D derivation AND publication
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: approved-asset-models
+          path: work/asset-models/
+          retention-days: 7

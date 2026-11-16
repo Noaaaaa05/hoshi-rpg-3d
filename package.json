@@ -16,7 +16,11 @@
     "rpg:release": "node scripts/rpg/release.mjs",
     "rpg:asset": "node --import ./tests/register-three.mjs scripts/rpg/asset.mjs",
     "rpg:verify-pages": "node scripts/rpg/verify-pages.mjs",
-    "meshy:retrieve": "node scripts/meshy/retrieve-task.mjs"
+    "meshy:retrieve": "node scripts/meshy/retrieve-task.mjs",
+    "assets:extract": "python3 tools/asset_pipeline/pipeline.py",
+    "assets:test": "python3 -m unittest discover -s tests/assets -p \"test_*.py\"",
+    "assets:plan": "node scripts/assets/plan.mjs",
+    "assets:register": "node --import ./tests/register-three.mjs scripts/assets/register.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1"
