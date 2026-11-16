@@ -1,0 +1,18 @@
+name: Inspect hero rig (offline)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect current hero GLB
+        run: node scripts/meshy/inspect-hero-rig.mjs assets/models/hero_animated.glb
+      - name: Inspect alternate hero GLB
+        run: node scripts/meshy/inspect-hero-rig.mjs assets/models/hero.glb
