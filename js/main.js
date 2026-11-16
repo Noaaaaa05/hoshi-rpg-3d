@@ -29,7 +29,7 @@ async function init() {
   const camera=new THREE.PerspectiveCamera(57,1,.15,280);
   const world=createWorld(scene), motor=new PlayerMotor(world.grid), player=createPlayer(scene), input=new Input();
   const drawMap=createMap($('#minimap'),world);
-  const village=createVillage(scene);
+  const village=createVillage(scene,world.grid);
   const saved=loadSave(), collected=new Set(saved?.stars || []), discovered=new Set(saved?.landmarks || []);
   const combat=new CombatSystem(motor,world.grid,saved?.progression),monsters=createMonsters(scene,combat);
   if(saved)motor.hp=saved.hp;
