@@ -23,10 +23,59 @@
       "color": "#f2cb78"
     },
     "watchpost-hut": {
-      "type": "procedural",
+      "type": "glb",
       "preset": "cottage",
-      "height": 2.8,
-      "color": "#6b8589"
+      "file": "models/cutouts/blue-roof-lodge.glb",
+      "sha256": "5b5c5cb8899eb0b99685a0cb2ccabc533faaacfb123347a1a60f8b5c20b95f42",
+      "height": 3.1,
+      "color": "#55728a",
+      "bones": 0,
+      "rotationY": 3.141592653589793
+    },
+    "azure-slime": {
+      "type": "glb",
+      "preset": "slime",
+      "file": "models/cutouts/azure-slime.glb",
+      "sha256": "a5a45115a0ccd3948dfa6a85b67eb69c72a0ce5ee63d27642f44b09bd55a0db3",
+      "height": 0.93,
+      "color": "#3b95c6",
+      "bones": 1
+    },
+    "scarlet-cap": {
+      "type": "glb",
+      "preset": "slime",
+      "file": "models/cutouts/scarlet-cap.glb",
+      "sha256": "8bd0e4b7cc9032c644372a524bc56515d0d27a674a1ae748dca287633983e905",
+      "height": 1.12,
+      "color": "#c66b55",
+      "bones": 2
+    },
+    "moss-golem": {
+      "type": "glb",
+      "preset": "goblin",
+      "file": "models/cutouts/moss-golem.glb",
+      "sha256": "fc0d74fbd41636378ebab833ef17963728ce769741765f6dcdd6225fcda03747",
+      "height": 1.9,
+      "color": "#7e8965",
+      "bones": 7
+    },
+    "oldwood-tree": {
+      "type": "glb",
+      "preset": "cottage",
+      "file": "models/cutouts/oldwood-tree.glb",
+      "sha256": "b8088bea365f0540035ac698e9166b59b56844bd38a6bc39f0c3a60e7b3d3528",
+      "height": 4.55,
+      "color": "#54864b",
+      "bones": 0
+    },
+    "field-naturalist": {
+      "type": "glb",
+      "preset": "scout",
+      "file": "models/cutouts/field-naturalist.glb",
+      "sha256": "6f2cfc975dc87b8927e907106fe81ce90975c68a3a33f9e10bae8ea7f75b39c1",
+      "height": 1.71,
+      "color": "#91866b",
+      "bones": 3
     }
   },
   "motions": {
@@ -70,6 +119,125 @@
       "blend": 0.08,
       "file": "models/motions/roll-d0b3c225826c.glb",
       "sha256": "d0b3c225826c603aa969e2329b62cc12dd90cd93628072a1c4489ae0d4789e08"
+    },
+    "azure-slime-idle": {
+      "model": "azure-slime",
+      "clip": "Idle",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "azure-slime-walk": {
+      "model": "azure-slime",
+      "clip": "Walk",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "azure-slime-attack": {
+      "model": "azure-slime",
+      "clip": "Attack",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "azure-slime-damage": {
+      "model": "azure-slime",
+      "clip": "Damage",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "azure-slime-death": {
+      "model": "azure-slime",
+      "clip": "Death",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "scarlet-cap-idle": {
+      "model": "scarlet-cap",
+      "clip": "Idle",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "scarlet-cap-walk": {
+      "model": "scarlet-cap",
+      "clip": "Walk",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "scarlet-cap-attack": {
+      "model": "scarlet-cap",
+      "clip": "Attack",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "scarlet-cap-damage": {
+      "model": "scarlet-cap",
+      "clip": "Damage",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "scarlet-cap-death": {
+      "model": "scarlet-cap",
+      "clip": "Death",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "moss-golem-idle": {
+      "model": "moss-golem",
+      "clip": "Idle",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "moss-golem-walk": {
+      "model": "moss-golem",
+      "clip": "Walk",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "moss-golem-attack": {
+      "model": "moss-golem",
+      "clip": "Attack",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "moss-golem-damage": {
+      "model": "moss-golem",
+      "clip": "Damage",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "moss-golem-death": {
+      "model": "moss-golem",
+      "clip": "Death",
+      "loop": false,
+      "speed": 1,
+      "blend": 0.05
+    },
+    "field-naturalist-idle": {
+      "model": "field-naturalist",
+      "clip": "Idle",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
+    },
+    "field-naturalist-talk": {
+      "model": "field-naturalist",
+      "clip": "Talk",
+      "loop": true,
+      "speed": 1,
+      "blend": 0.12
     }
   },
   "actors": {
@@ -78,6 +246,85 @@
       "role": "companion",
       "model": "mina-scout",
       "dialogue": "mina-watchpost"
+    },
+    "rita": {
+      "name": "森の調査員リタ",
+      "role": "npc",
+      "model": "field-naturalist",
+      "motions": {
+        "idle": "field-naturalist-idle",
+        "talk": "field-naturalist-talk"
+      },
+      "dialogue": "rita-forest"
+    },
+    "azure-slime": {
+      "name": "青いスライム",
+      "role": "enemy",
+      "model": "azure-slime",
+      "motions": {
+        "idle": "azure-slime-idle",
+        "walk": "azure-slime-walk",
+        "attack": "azure-slime-attack",
+        "damage": "azure-slime-damage",
+        "death": "azure-slime-death"
+      },
+      "enemy": {
+        "variant": "slime",
+        "hp": 36,
+        "damage": 8,
+        "xp": 18,
+        "speed": 1.64,
+        "radius": 0.58,
+        "range": 1.56,
+        "windup": 0.65,
+        "recovery": 1.05
+      }
+    },
+    "scarlet-cap": {
+      "name": "アカカサキノコ",
+      "role": "enemy",
+      "model": "scarlet-cap",
+      "motions": {
+        "idle": "scarlet-cap-idle",
+        "walk": "scarlet-cap-walk",
+        "attack": "scarlet-cap-attack",
+        "damage": "scarlet-cap-damage",
+        "death": "scarlet-cap-death"
+      },
+      "enemy": {
+        "variant": "slime",
+        "hp": 48,
+        "damage": 10,
+        "xp": 24,
+        "speed": 1.8,
+        "radius": 0.54,
+        "range": 1.67,
+        "windup": 0.72,
+        "recovery": 0.94
+      }
+    },
+    "moss-golem": {
+      "name": "苔岩のゴーレム",
+      "role": "enemy",
+      "model": "moss-golem",
+      "motions": {
+        "idle": "moss-golem-idle",
+        "walk": "moss-golem-walk",
+        "attack": "moss-golem-attack",
+        "damage": "moss-golem-damage",
+        "death": "moss-golem-death"
+      },
+      "enemy": {
+        "variant": "goblin",
+        "hp": 106,
+        "damage": 16,
+        "xp": 48,
+        "speed": 1.49,
+        "radius": 0.81,
+        "range": 2.04,
+        "windup": 1.04,
+        "recovery": 1.25
+      }
     }
   },
   "zones": {
@@ -94,6 +341,20 @@
       "x": 4.8,
       "z": 5.5,
       "radius": 2.5
+    },
+    "oldwood-rest": {
+      "name": "古木の休憩所",
+      "kind": "forest",
+      "x": -4,
+      "z": 7.7,
+      "radius": 3.3
+    },
+    "mosswood": {
+      "name": "苔岩の森",
+      "kind": "forest",
+      "x": 0,
+      "z": -8.5,
+      "radius": 17.5
     }
   },
   "placements": {
@@ -120,6 +381,39 @@
         1.61,
         1.19
       ]
+    },
+    "oldwood-clearing-tree": {
+      "zone": "oldwood-rest",
+      "model": "oldwood-tree",
+      "x": -4.5,
+      "z": 5.6,
+      "collider": 0.62,
+      "yaw": -0.18
+    },
+    "rita-oldwood": {
+      "zone": "oldwood-rest",
+      "actor": "rita",
+      "x": -3.6,
+      "z": 8.9,
+      "yaw": 0.36
+    },
+    "azure-slime-mosswood": {
+      "zone": "mosswood",
+      "actor": "azure-slime",
+      "x": -10.2,
+      "z": 4.7
+    },
+    "scarlet-cap-mosswood": {
+      "zone": "mosswood",
+      "actor": "scarlet-cap",
+      "x": 10.9,
+      "z": -10.3
+    },
+    "moss-golem-mosswood": {
+      "zone": "mosswood",
+      "actor": "moss-golem",
+      "x": -7.3,
+      "z": -20.3
     }
   },
   "dialogues": {
@@ -165,6 +459,15 @@
         },
         "joined": {
           "text": "うん、ついていくよ。",
+          "choices": []
+        }
+      }
+    },
+    "rita-forest": {
+      "start": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "青い屋根がミナの見張り台だよ。この古木の左手には青いスライム。森を奥へ進むと、赤いキノコと苔のゴーレムにも出会うよ。",
           "choices": []
         }
       }
